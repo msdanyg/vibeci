@@ -41,7 +41,7 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key vibeci
 
 ### Request lifecycle
 1. `POST /api/analyze` → creates a job (UUID), kicks off `execute_workflow` as a FastAPI `BackgroundTask`, returns `job_id`.
-2. Frontend opens `GET /api/stream/{job_id}` as an SSE `EventSource`. `execute_workflow` emits a **structured timeline of typed events** (not log strings): `mode`, `agent` (`phase: start|done`, with `detail`/`elapsed_ms`), `tool` (real MCP call name + args + result), `doc` (the ingested `raw_doc` for the live source panel), and a terminal `completed` (full report) / `failed`. The client (`app.js`) renders these as the run-timeline; changing an event shape means updating both sides.
+2. Frontend opens `GET /api/stream/{job_id}` as an SSE `EventSource`. `execute_workflow` emits a **structured timeline of typed events** (not log strings): `mode`, `pipeline` (the four-agent manifest from `config.agent_manifest()` — label/specialty/capability/reasoning-level/accent; `app.js` builds the timeline rows from this), `agent` (`phase: start|done`, with `detail`/`elapsed_ms` — **elapsed only in live mode**; demo sends `null` → "Done"), `tool` (real MCP call name + args + result), `doc` (the ingested `raw_doc` for the live source panel), and a terminal `completed` (full report) / `failed`. The client (`app.js`) renders these as the run-timeline; changing an event shape means updating both sides.
 3. Job state lives in two **in-memory module-level dicts** in `app/main.py`: `jobs` (status/**`events`**/result) and `queues` (per-job `asyncio.Queue` feeding the SSE stream). Lost on restart and **not safe across multiple workers** — run uvicorn single-process. The stream replays `jobs[id]["events"]` only if the job already finished before the client connected; otherwise it drains the queue live (sole producer/consumer, so no dup/miss).
 
 ### The agent pipeline (`execute_workflow` in `app/main.py`)
@@ -54,14 +54,14 @@ Orchestration is **manual sequential `await`s**, not SDK-driven multi-agent hand
 - **synthesis.py** — defines the Pydantic output schema (`CompetitorReport` → `BattleCard`, `ClaimGap`, `ObjectionHandler`) and emits structured JSON via `response_schema`.
 - **checking.py** — fact-checks the draft report against the raw specs, re-validates against `CompetitorReport`, falls back to the unmodified draft if parsing fails.
 
-`app/agents/config.py` centralizes everything: the four persona system-prompts and `get_agent_config(persona_type, tools, response_schema, mcp_servers)` which builds the `LocalAgentConfig`. Add new agents/personas here.
+`app/agents/config.py` centralizes everything: `AGENT_SPECS` (per-agent persona, **real `ThinkingLevel`** — discovery `low`, analysis/checking `high`, synthesis `medium` — plus UI metadata: specialty/capability/accent/star), `agent_manifest()` (secret-free metadata for the `pipeline` SSE event), and `get_agent_config(persona_type, tools, response_schema, mcp_servers, api_key)` which builds a specialized `LocalAgentConfig` (a `ModelTarget` whose `GeminiAPIEndpoint` carries the thinking level + the bring-your-own-key). Each `run_*_agent(...)` takes an `api_key` and forwards it. Add new agents/personas here.
 
 ### MCP tools have two invocation paths (`app/mcp_server.py`)
 `fetch_competitor_docs` and `compare_claims_to_docs` are exposed via `FastMCP` over stdio, **but** `app/main.py` also imports them as plain Python functions and calls them directly in the live path (for the `raw_doc` and `preliminary_gaps` that get appended to the result). Only the Discovery agent reaches them through the MCP transport. `fetch_competitor_docs` tries a live HTTP GET, then falls back to `MOCK_DOCUMENTS` keyed by competitor name substring.
 
 ### Two execution modes
 - **Demo mode** (`demo_mode: true`, UI default) — emits the same structured timeline events (paced by `PACE` for a readable cadence, clearly labelled "Demo data" in the UI) but the stats are derived from a pre-canned report in the `DEMO_REPORTS` dict at the top of `app/main.py`; no API key, no network, no agents actually run. Competitor is resolved by substring match on name (`hubstaff` / `time doctor` / else `teramind`).
-- **Live mode** — runs the real pipeline; agent/tool events carry real timings and tool I/O.
+- **Live mode** — runs the real pipeline; agent/tool events carry real timings and tool I/O. Needs a key: either a server-side `GEMINI_API_KEY` **or** a **bring-your-own-key** (`api_key` in the `/api/analyze` body, used per-request, masked in any error, never stored/logged). The config UI reveals a key field when Demo is toggled off; the public Cloud Run deploy ships **no** key (demo-only). Results screen has a **"What just happened"** context view (`#view-about`) explaining the workflow + the ActivTrak org framing.
 
 If you change the `CompetitorReport` schema, you must also update the hand-written `DEMO_REPORTS` entries to match, or demo mode will render inconsistently with live mode.
 
