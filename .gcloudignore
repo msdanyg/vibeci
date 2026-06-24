@@ -1,0 +1,13 @@
+# Keep secrets and local cruft out of the Cloud Build upload.
+.git/
+.gitignore
+.gcloudignore
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/
+.DS_Store
+*.log
+.playwright-mcp/

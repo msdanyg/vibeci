@@ -206,20 +206,22 @@ docker build -t vibeci .
 docker run -p 8080:8080 -e GEMINI_API_KEY=your_key_here vibeci   # key optional; Demo mode needs none
 ```
 
-### Deploy to Google Cloud Run
+### Deploy to Google Cloud Run (demo-only — no key shipped)
 
 ```bash
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/vibeci
-gcloud run deploy vibeci \
-  --image gcr.io/YOUR_PROJECT_ID/vibeci \
-  --platform managed --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars GEMINI_API_KEY=your_key_here
+# one-time (your account / project; billing enabled)
+./gcloud.sh auth login
+./gcloud.sh config set project YOUR_PROJECT_ID
+
+# deploy — builds from the Dockerfile via Cloud Build, then deploys
+./deploy.sh
+#  ≡ gcloud run deploy vibeci --source . --region us-central1 \
+#        --allow-unauthenticated --max-instances 1
 ```
 
-> Run state lives in in-memory dicts, so deploy **single-instance / single-process** (no `--workers > 1`).
+> **Demo-only by design.** No `GEMINI_API_KEY` is set on the service, so the public instance runs Demo mode (Live shows a graceful "needs a key" message). `.gcloudignore` keeps `.env` out of the build upload entirely. To enable Live, redeploy appending `--set-env-vars GEMINI_API_KEY=<quota-enabled-key>`.
+>
+> **Single instance.** Job state is in-memory, so the deploy pins `--max-instances 1` — the SSE stream must hit the same process that ran the job (don't add `--workers`).
 
 ---
 
