@@ -238,6 +238,14 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--bra
 .panel .plabel { font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; margin-bottom:8px; }
 .panel.claim .plabel { color:var(--text-muted); }
 .panel.reality .plabel { color:var(--reality); }
+/* Per-gap grounding-confidence pill (server-computed, eval-gated) */
+.conf-pill { display:inline-flex; align-items:center; gap:5px; margin-left:8px; padding:1px 8px; border-radius:var(--r-full); font-size:10.5px; font-weight:700; letter-spacing:.02em; text-transform:none; vertical-align:middle; border:1px solid transparent; }
+.conf-pill .conf-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.conf-pill.conf-high { color:var(--positive-dark); background:var(--positive-bg); border-color:var(--positive-border); }
+.conf-pill.conf-mid  { color:#1d4ed8; background:#eff4ff; border-color:#cdddff; }
+.conf-pill.conf-low  { color:#b45309; background:#fff7ed; border-color:#fed7aa; }
+/* Avg-confidence caption under the Grounded stat */
+.conf-cap { font-size:9.5px; font-weight:600; letter-spacing:.02em; color:var(--text-faint); margin-top:2px; white-space:nowrap; }
 .claim-text { font-family:var(--font-serif); font-style:italic; font-size:15.5px; line-height:1.5; color:var(--claim); }
 .claim-attr { font-size:12px; color:var(--text-faint); margin-top:8px; }
 .reality-text { font-size:15px; font-weight:500; color:var(--text-strong); line-height:1.5; }

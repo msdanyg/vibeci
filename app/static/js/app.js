@@ -373,11 +373,20 @@ why_quota();
     activeLine = null;
     renderBrief(data.research_brief);
 
-    // header + stats
+    // header + stats. The Grounded figure is now *earned*: the server grounds every
+    // gap and scores the match (app/grounding.py) — the same code our eval gates. We
+    // show the share grounded above threshold + the average confidence beneath it.
     $('r-name').textContent = data.competitor_name;
     $('s-gaps').textContent = data.gaps.length;
     $('s-high').textContent = data.gaps.filter(g => /high/i.test(g.severity)).length;
-    $('s-ground').textContent = '100%';
+    const gd = data.grounding;
+    if (gd && gd.total) {
+      $('s-ground').textContent = Math.round((gd.grounded / gd.total) * 100) + '%';
+      $('s-conf').textContent = 'avg ' + Math.round(gd.score * 100) + '% conf';
+      $('stat-ground').title = `${gd.grounded}/${gd.total} gaps grounded ≥ ${Math.round(gd.threshold * 100)}% · eval-gated`;
+    } else {
+      $('s-ground').textContent = '100%';
+    }
 
     // source evidence
     const rendered = renderDoc(data.raw_doc || '', $('doc-body'));
@@ -388,7 +397,14 @@ why_quota();
     // gap cards
     const stack = $('gap-stack'); stack.innerHTML = '';
     data.gaps.forEach((g, i) => {
-      const gr = groundGap(g, data.raw_doc || '', sections, data.preliminary_gaps);
+      // Prefer the server's grounding (line + confidence the eval gates); fall back to
+      // the client-side computation for older reports that predate server grounding.
+      const gr = (g.grounding && g.grounding.line != null)
+        ? g.grounding : groundGap(g, data.raw_doc || '', sections, data.preliminary_gaps);
+      const conf = (gr.confidence != null) ? gr.confidence : null;
+      const confBand = conf == null ? '' : conf >= 0.85 ? 'conf-high' : conf >= 0.6 ? 'conf-mid' : 'conf-low';
+      const confPill = conf == null ? '' :
+        `<span class="conf-pill ${confBand}" title="Grounding confidence — how strongly this source line backs the finding"><span class="conf-dot"></span>${Math.round(conf * 100)}% grounded</span>`;
       const sevLabel = g.severity.replace(/ ?Gaps?/i, '').trim() + ' gap';
       const card = document.createElement('div');
       card.className = 'gap-card';
@@ -405,7 +421,7 @@ why_quota();
             <div class="claim-attr">— ${escapeHtml(data.competitor_name)} marketing</div>
           </div>
           <div class="panel reality">
-            <div class="plabel">Technical reality</div>
+            <div class="plabel">Technical reality ${confPill}</div>
             <div class="reality-text">${escapeHtml(g.technical_reality)}</div>
             <div class="ground-chip" role="button" tabindex="0" data-line="${gr.line}"
                  aria-label="View the documentation line that grounds this claim, in section ${escapeHtml(gr.section || 'the source document')}">

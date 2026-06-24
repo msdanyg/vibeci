@@ -38,7 +38,7 @@ A sales rep facing a Teramind objection needs to know that "real-time session mo
 The UI is built so a viewer can *trust* the output, not just read it:
 
 - **Strategy-directed, not generic.** Before reading the competitor, a **Strategy / Research-Planner agent** turns *your* business context — messaging pillars, product roadmap, and solution map / ICP (with mocked connectors to Confluence / Productboard / Salesforce) — into a **research brief**: which lenses to scrutinise, who to frame the findings for, and which pillars to anchor the battle card in. Every gap is then tagged with the lens it answers. This is competitive intelligence *directed by your strategy*, not generic doc-diffing.
-- **Real, clickable source grounding.** Every gap card carries a "View source ↗" citation. Clicking it scrolls the competitor's ingested documentation to — and highlights — the *exact line* that contradicts the marketing claim. The grounding is computed from the real documentation text (anchored on the evidence the MCP pre-screen tool extracted), **not hardcoded**.
+- **Real, clickable source grounding — measured and gated.** Every gap card carries a "View source ↗" citation. Clicking it scrolls the competitor's ingested documentation to — and highlights — the *exact line* that contradicts the marketing claim. The grounding is computed from the real documentation text (anchored on the evidence the MCP pre-screen tool extracted), **not hardcoded**. Each gap also gets a **grounding-confidence score** (0–100%, how strongly the doc backs it) shown right on the card — and an **eval** (`python -m eval.grounding_eval`, also a pytest gate) runs the real pipeline and *fails CI* if any finding stops grounding above threshold. The "Grounded" stat is earned, not asserted.
 - **An honest agent run timeline.** Instead of a fake "hacker terminal," the run view shows the five agents executing in sequence, each with its model, elapsed time, and the **real MCP tool calls** it made (arguments in, structured result out).
 - **Two clearly-signposted layers.** The product value ("the findings" — claim-vs-reality gap cards) is visually separated from the machinery ("under the hood" — the agent pipeline, the source document, the schema-validated JSON), so the engineering is legible without drowning the value.
 - **Light, SaaS-grade design.** A calm, credible product surface where the only loud thing on the page is the claim-vs-reality gap.
@@ -154,7 +154,8 @@ The response also carries `raw_doc` (the ingested source text) and `preliminary_
 |---|---|---|
 | **Multi-agent system** | `app/agents/` — 5 agents orchestrated via `google.antigravity`, surfaced in a live run timeline | ✅ Built |
 | **MCP Server** | `app/mcp_server.py` — `fetch_competitor_docs` + `compare_claims_to_docs`, with real tool-call I/O shown in the UI | ✅ Built |
-| **Source grounding** | Every claim links to the exact line in the competitor's docs; computed for real, client-side | ✅ Built |
+| **Source grounding** | Every claim links to the exact line in the competitor's docs; computed for real (`app/grounding.py`) | ✅ Built |
+| **Grounding-confidence eval** | Per-gap confidence score, surfaced in-app and **gated** by `eval/grounding_eval.py` + pytest | ✅ Built |
 | **Structured output** | Pydantic `CompetitorReport` schema, validated and viewable in-app | ✅ Built |
 | **Deployability** | `Dockerfile` + Cloud Run config (see below) | ✅ Built |
 | **Antigravity** | Agentic build process shown in video | 🎯 Target |
@@ -196,11 +197,23 @@ Open [http://localhost:8080](http://localhost:8080). Demo mode is on by default,
 
 ## 🧪 Tests
 
-A `pytest` suite covers the deterministic core — the MCP document tools (live-fetch with mock fallback, the claims-vs-docs pre-screen) and the full demo pipeline, including the structured SSE event timeline the frontend and notebook depend on:
+A `pytest` suite covers the deterministic core — the MCP document tools (live-fetch with mock fallback, the claims-vs-docs pre-screen), the full demo pipeline (incl. the structured SSE event timeline the frontend and notebook depend on), and a **grounding-confidence gate** that fails if any finding stops grounding to its source line above threshold:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest          # run from the repo root
+pytest                       # run from the repo root
+
+# The grounding eval also runs standalone — prints a per-gap confidence report:
+python -m eval.grounding_eval
+```
+
+```
+  VibeCI · GROUNDING-CONFIDENCE EVAL
+  Teramind       avg 100%   min 100%   [PASS]
+  Hubstaff       avg  79%   min  58%   [PASS]
+  Time Doctor    avg  85%   min  56%   [PASS]
+  CORPUS: 8/8 gaps grounded ≥ 45%  ·  avg confidence 89%  ·  min 56%
+  RESULT: ✓ PASS — grounding holds across the corpus
 ```
 
 ---
@@ -239,6 +252,7 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key_here vibeci   # key optional;
 .
 ├── app/
 │   ├── main.py              # FastAPI backend — job queue, SSE timeline, pipeline orchestration
+│   ├── grounding.py         # Source grounding + grounding-confidence score (server source of truth)
 │   ├── mcp_server.py        # MCP server: fetch_competitor_docs + compare_claims_to_docs
 │   ├── agents/
 │   │   ├── config.py        # Shared model config + the five agent personas
@@ -251,6 +265,9 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key_here vibeci   # key optional;
 │       ├── index.html       # 5 views: config → run → results → landscape → about
 │       ├── css/style.css    # Light, SaaS-grade design system
 │       └── js/app.js        # SSE client, run timeline, results + real source grounding
+├── eval/
+│   └── grounding_eval.py    # Grounding-confidence eval — runs the real pipeline, gates on the score
+├── tests/                   # pytest — MCP tools, demo pipeline/SSE contract, grounding gate
 ├── Dockerfile
 ├── requirements.txt
 ├── .env.example

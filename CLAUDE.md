@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-No linter or build step is configured. There **is** a pytest suite (`tests/`) covering the deterministic core — the MCP tools and the demo pipeline / SSE event contract (live agents are not exercised, since they need a quota-enabled key). Common workflows:
+No linter or build step is configured. There **is** a pytest suite (`tests/`) covering the deterministic core — the MCP tools, the demo pipeline / SSE event contract, and a **grounding-confidence gate** (live agents are not exercised, since they need a quota-enabled key). Common workflows:
 
 ```bash
 # Setup (Python 3.11+)
@@ -20,6 +20,10 @@ pip install -r requirements-dev.txt
 pytest                       # whole suite
 pytest tests/test_api.py -q  # one file
 pytest -k grounding -q       # one pattern
+
+# Grounding-confidence eval — runs the real demo pipeline, scores how strongly each
+# gap is backed by its source line, prints a report, exits non-zero on any failure.
+python -m eval.grounding_eval
 
 # Run locally — MUST be from the repo root (see gotchas)
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
@@ -69,7 +73,7 @@ If you change the `CompetitorReport` schema, you must also update the hand-writt
 ### Frontend
 `app/static/` is plain HTML/CSS/vanilla JS (no framework, no build; light "SaaS" design system in `css/style.css` keyed off CSS variables). Mounted at `/` via `StaticFiles`. It's a single page with **four view states** swapped by `app.js`: config (with the business-context inputs — pillars/roadmap/ICP + mocked connector chips) → run timeline → results (with the research-brief panel + lens-tagged gaps) → a "what just happened" context view (`#view-about`). The three preset competitors (Teramind/Hubstaff/Time Doctor) with their mock URLs and claims are hardcoded in `app/static/js/app.js`.
 
-**Source grounding is computed client-side, for real.** Each results "gap card" links to a source line via `groundGap()` in `app.js`: it anchors on the matching `preliminary_gaps[].doc_snippet` (the real evidence the `compare_claims_to_docs` MCP tool extracted — matched to the gap by overlap with its `technical_reality`, NOT the marketing-claim keyword, since several claims can share one), then picks the best `raw_doc` line by IDF- and number-weighted token overlap, and highlights it — no hardcoded citations. Works for any report (demo or live) as long as `raw_doc`/`preliminary_gaps` are present, so live mode needs no extra backend grounding.
+**Source grounding is real, scored, and eval-gated.** Each gap is grounded to a `raw_doc` line by anchoring on the matching `preliminary_gaps[].doc_snippet` (the real evidence the `compare_claims_to_docs` MCP tool extracted — matched to the gap by overlap with its `technical_reality`, NOT the marketing-claim keyword, since several claims can share one), then picking the best line by IDF- and number-weighted token overlap — no hardcoded citations. This logic lives in **two faithful copies**: `app/grounding.py` (server, the source of truth) and `groundGap()` in `app.js` (client, used for the line *highlight* + as a fallback). At the end of `execute_workflow`, `ground_report(report)` attaches a `grounding` block to every gap — `{line, section, quote, confidence}`, where **confidence ∈ [0,1]** is the fraction of the anchor's weighted distinctive tokens present in the matched line — plus a report-level aggregate (`score`, `min`, `grounded`/`total`, `threshold`, `all_grounded`). The results UI shows the per-gap confidence as a pill and the earned "Grounded" stat from these server values (preferring `gap.grounding`, falling back to the client computation for older reports). `eval/grounding_eval.py` runs the real demo pipeline and **gates** on the same metric (also wired as `tests/test_grounding_eval.py`), so the UI shows exactly the confidence CI verifies. Calibrated threshold: `GROUND_THRESHOLD = 0.45` (demo corpus min ≈ 0.56, avg ≈ 0.89). If you change the grounding algorithm, keep `app/grounding.py` and `app.js` in sync or the UI highlight and the scored confidence will diverge.
 
 ## Gotchas
 

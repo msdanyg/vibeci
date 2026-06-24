@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -187,7 +187,7 @@
           <div class="stat-strip">
             <div class="stat"><div class="num" id="s-gaps">0</div><div class="lbl">Gaps</div></div>
             <div class="stat"><div class="num high" id="s-high">0</div><div class="lbl">High&nbsp;severity</div></div>
-            <div class="stat"><div class="num grounded" id="s-ground">100%</div><div class="lbl">Grounded</div></div>
+            <div class="stat" id="stat-ground"><div class="num grounded" id="s-ground">100%</div><div class="lbl">Grounded</div><div class="conf-cap" id="s-conf"></div></div>
           </div>
         </div>
 
@@ -220,7 +220,7 @@
 
           <div class="evidence">
             <div class="section-label"><h2>Source evidence</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
-            <p class="section-note">The competitor's own published documentation. Every finding on the left is grounded to a line in here — click a “View source” citation to jump straight to it.</p>
+            <p class="section-note">The competitor's own published documentation. Every finding on the left is grounded to a line in here — click a “View source” citation to jump straight to it. Each gap carries a <b>grounding-confidence</b> score (how strongly the doc backs it), and our eval gates that score in CI.</p>
             <div class="evidence-card">
               <div class="evidence-head">
                 <span class="ev-id"><span class="src-dot"></span>
@@ -381,6 +381,6 @@
     <span>5 agents over an MCP tool server</span>
   </footer>
 
-  <script src="js/app.js?v=18"></script>
+  <script src="js/app.js?v=19"></script>
 </body>
 </html>

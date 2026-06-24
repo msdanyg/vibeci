@@ -15,6 +15,7 @@ load_dotenv()
 
 # Import MCP tools directly
 from app.mcp_server import fetch_competitor_docs, compare_claims_to_docs
+from app.grounding import ground_report
 
 # Import agent runner functions
 from app.agents.discovery import run_discovery_agent
@@ -560,6 +561,10 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
                     "elapsed_ms": el(t0)}, PACE)
 
         report["research_brief"] = brief
+        # Ground every gap to its best documentation line and score the match 0–1.
+        # Same code the eval gates on (eval/grounding_eval.py) → the UI shows exactly
+        # the confidence that CI verifies; the highlight stays computed client-side.
+        ground_report(report)
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["result"] = report
         await emit({"type": "completed", "data": report})
