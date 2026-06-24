@@ -10,7 +10,7 @@
 
 **🔗 Live demo:** **[vibeci-107532323288.us-central1.run.app](https://vibeci-107532323288.us-central1.run.app)** — runs in Demo mode, no key needed. Pick a competitor → Run analysis → click a citation to jump to the source line.
 
-![VibeCI walkthrough — config → the four-agent pipeline → a battle card with every claim grounded to a source line → "what just happened" context](assets/demo.gif)
+![VibeCI walkthrough — config → the five-agent pipeline → a battle card with every claim grounded to a source line → "what just happened" context](assets/demo.gif)
 
 ---
 
@@ -37,8 +37,9 @@ A sales rep facing a Teramind objection needs to know that "real-time session mo
 
 The UI is built so a viewer can *trust* the output, not just read it:
 
+- **Strategy-directed, not generic.** Before reading the competitor, a **Strategy / Research-Planner agent** turns *your* business context — messaging pillars, product roadmap, and solution map / ICP (with mocked connectors to Confluence / Productboard / Salesforce) — into a **research brief**: which lenses to scrutinise, who to frame the findings for, and which pillars to anchor the battle card in. Every gap is then tagged with the lens it answers. This is competitive intelligence *directed by your strategy*, not generic doc-diffing.
 - **Real, clickable source grounding.** Every gap card carries a "View source ↗" citation. Clicking it scrolls the competitor's ingested documentation to — and highlights — the *exact line* that contradicts the marketing claim. The grounding is computed from the real documentation text (anchored on the evidence the MCP pre-screen tool extracted), **not hardcoded**.
-- **An honest agent run timeline.** Instead of a fake "hacker terminal," the run view shows the four agents executing in sequence, each with its model, elapsed time, and the **real MCP tool calls** it made (arguments in, structured result out).
+- **An honest agent run timeline.** Instead of a fake "hacker terminal," the run view shows the five agents executing in sequence, each with its model, elapsed time, and the **real MCP tool calls** it made (arguments in, structured result out).
 - **Two clearly-signposted layers.** The product value ("the findings" — claim-vs-reality gap cards) is visually separated from the machinery ("under the hood" — the agent pipeline, the source document, the schema-validated JSON), so the engineering is legible without drowning the value.
 - **Light, SaaS-grade design.** A calm, credible product surface where the only loud thing on the page is the claim-vs-reality gap.
 
@@ -83,12 +84,15 @@ The UI is built so a viewer can *trust* the output, not just read it:
 
 ### Agent Descriptions
 
-| Agent | Role | Model |
+| Agent | Role | Reasoning |
 |---|---|---|
-| **Discovery Agent** | Ingests competitor documentation via MCP tools; fetches live URLs or falls back to preloaded specs | `gemini-2.0-flash` |
-| **Technical Analysis Agent ★** | Reads raw specs, extracts real capabilities, contrasts against marketing claims and user positioning | `gemini-2.0-flash` |
-| **Synthesis Agent** | Formats analysis into structured, Pydantic-validated JSON: battle cards, gap matrices, objection handlers | `gemini-2.0-flash` |
-| **Fact-Checking / QC Agent** | Grounds every claim back to the source documentation; removes hallucinations; re-validates the schema | `gemini-2.0-flash` |
+| **Strategy / Research-Planner** | Reads your messaging pillars, roadmap & ICP → a research brief (prioritized lenses · who to frame for · which pillars) that steers the rest of the pipeline | `high` |
+| **Discovery Agent** | Ingests competitor documentation via MCP tools; fetches live URLs or falls back to preloaded specs | `low` |
+| **Technical Analysis Agent ★** | Reads raw specs, extracts real capabilities, contrasts against marketing claims and user positioning — prioritizing the brief's lenses | `high` |
+| **Synthesis Agent** | Formats analysis into structured, Pydantic-validated JSON: battle cards, gap matrices, objection handlers — anchored in your pillars | `medium` |
+| **Fact-Checking / QC Agent** | Grounds every claim back to the source documentation; removes hallucinations; re-validates the schema | `high` |
+
+> All agents run `gemini-2.0-flash`, specialized by **reasoning effort** (`ThinkingLevel`), tools, and structured-output schema.
 
 ### MCP Server Tools
 
@@ -138,7 +142,7 @@ The response also carries `raw_doc` (the ingested source text) and `preliminary_
 | Mode | What runs | API key |
 |---|---|---|
 | **Demo** (default, the canonical showcase) | The full UI and SSE timeline render from pre-canned, schema-accurate reports. No network, deterministic, instant. | **None** |
-| **Live** | The real four-agent Gemini pipeline ingests docs and generates the report end-to-end. | A **quota-enabled** `GEMINI_API_KEY` |
+| **Live** | The real five-agent Gemini pipeline ingests docs and generates the report end-to-end. | A **quota-enabled** `GEMINI_API_KEY` |
 
 > Demo mode is the showcase: it needs no key, never rate-limits, and is reproducible for judging and portfolio review. Live mode is fully wired and authenticates/fetches/calls Gemini for real — it just needs a Google AI project with available `gemini-2.0-flash` quota (the free tier may be `0`; enable billing or use a quota-enabled key). If a live run hits a quota or key error, the UI surfaces a clean, actionable message and offers a one-click fallback to Demo mode.
 
@@ -148,7 +152,7 @@ The response also carries `raw_doc` (the ingested source text) and `preliminary_
 
 | Concept | Where | Status |
 |---|---|---|
-| **Multi-agent system** | `app/agents/` — 4 agents orchestrated via `google.antigravity`, surfaced in a live run timeline | ✅ Built |
+| **Multi-agent system** | `app/agents/` — 5 agents orchestrated via `google.antigravity`, surfaced in a live run timeline | ✅ Built |
 | **MCP Server** | `app/mcp_server.py` — `fetch_competitor_docs` + `compare_claims_to_docs`, with real tool-call I/O shown in the UI | ✅ Built |
 | **Source grounding** | Every claim links to the exact line in the competitor's docs; computed for real, client-side | ✅ Built |
 | **Structured output** | Pydantic `CompetitorReport` schema, validated and viewable in-app | ✅ Built |

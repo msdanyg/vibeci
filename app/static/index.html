@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=13">
+  <link rel="stylesheet" href="css/style.css?v=14">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -37,20 +37,29 @@
         <div class="config-intro">
           <span class="eyebrow">Agents for Business</span>
           <h1>Catch the gap between<br>a competitor's <span class="grad">claims and their docs.</span></h1>
-          <p>VibeCI runs a four-agent pipeline over a competitor's technical documentation, then shows you exactly where their marketing claims break down — every finding grounded to a source line you can click.</p>
+          <p>VibeCI reads <strong>your</strong> strategy, then runs a five-agent pipeline over a competitor's technical documentation — showing exactly where their marketing breaks down, framed for your buyer and grounded to a source line you can click.</p>
         </div>
 
         <form id="analyze-form" class="config-card card">
           <fieldset>
-            <legend>Your company</legend>
+            <legend>Your business context <span class="legend-note">— steers what the agents hunt for</span></legend>
             <div class="field">
               <label for="own-domain">Domain</label>
               <input type="text" id="own-domain" value="ActivTrak.com" autocomplete="off" required>
             </div>
-            <div class="field">
-              <label for="own-positioning">Positioning</label>
-              <textarea id="own-positioning" rows="3" required>We focus on privacy-first employee productivity insights. We track active application window titles and active/idle state, but we exclude screen recording, camera access, and keystroke logging to protect trust.</textarea>
+            <div class="ctx-field">
+              <div class="ctx-head"><label for="own-positioning">Messaging pillars</label><span class="connector-chip">⟿ Confluence <span class="mock">demo</span></span></div>
+              <textarea id="own-positioning" rows="2" required>Privacy-first workforce analytics. Pillars: Trust (no screenshots or keystroke logging), Lightweight (minimal agent, no bandwidth hit), Insight not surveillance (outcomes over monitoring).</textarea>
             </div>
+            <div class="ctx-field">
+              <div class="ctx-head"><label for="roadmap">Product roadmap</label><span class="connector-chip">⟿ Productboard <span class="mock">demo</span></span></div>
+              <textarea id="roadmap" rows="2">Shipping privacy-first Focus &amp; Impact insights for hybrid teams; deepening HRIS/BI integrations. Explicitly NOT on the roadmap: keystroke logging or always-on screen capture.</textarea>
+            </div>
+            <div class="ctx-field">
+              <div class="ctx-head"><label for="icp">Solution map &amp; ICP</label><span class="connector-chip">⟿ Salesforce <span class="mock">demo</span></span></div>
+              <textarea id="icp" rows="2">IT &amp; People-Ops leaders at mid-market/enterprise (200–5,000 employees), hybrid &amp; trust/privacy-conscious or regulated industries. Use cases: productivity benchmarking, capacity &amp; burnout, license optimization.</textarea>
+            </div>
+            <p class="field-hint ctx-note">In production these sync from your roadmap tool, CRM, and wiki via connectors. Here they're editable Markdown — and they directly steer the Strategy agent's research brief.</p>
           </fieldset>
 
           <fieldset>
@@ -103,7 +112,7 @@
           <div>
             <span class="eyebrow">Analyzing · how it works</span>
             <h1 id="run-competitor">Competitor</h1>
-            <p class="head-sub">A look under the hood: the four-agent pipeline producing your analysis, step by step.</p>
+            <p class="head-sub">A look under the hood: the five-agent pipeline producing your analysis, step by step.</p>
           </div>
           <div class="run-elapsed"><span id="run-elapsed">0.0s</span> elapsed</div>
         </div>
@@ -165,6 +174,26 @@
             <div class="stat"><div class="num grounded" id="s-ground">100%</div><div class="lbl">Grounded</div></div>
           </div>
         </div>
+
+        <section class="brief-panel" id="brief-panel" hidden>
+          <div class="section-label"><h2>Research brief</h2><span class="strat-tag">⚙ strategy agent</span><span class="rule"></span></div>
+          <p class="section-note">Before reading the competitor, the Strategy agent turned <strong>your</strong> context (pillars · roadmap · ICP) into the agenda for this analysis.</p>
+          <div class="brief-card">
+            <p class="brief-directive" id="brief-directive"></p>
+            <div class="brief-grid">
+              <div>
+                <div class="brief-h">Priority lenses</div>
+                <ol class="brief-lenses" id="brief-lenses"></ol>
+              </div>
+              <div class="brief-side">
+                <div class="brief-h">Framed for</div>
+                <p class="brief-icp" id="brief-icp"></p>
+                <div class="brief-h">Anchored in your pillars</div>
+                <div class="pillar-chips" id="brief-pillars"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div class="split">
           <div>
@@ -304,6 +333,6 @@
     <span>4 agents over an MCP tool server</span>
   </footer>
 
-  <script src="js/app.js?v=13"></script>
+  <script src="js/app.js?v=14"></script>
 </body>
 </html>

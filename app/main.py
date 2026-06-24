@@ -21,6 +21,7 @@ from app.agents.discovery import run_discovery_agent
 from app.agents.analysis import run_analysis_agent
 from app.agents.synthesis import run_synthesis_agent, CompetitorReport
 from app.agents.checking import run_checking_agent
+from app.agents.strategy import run_strategy_agent
 from app.agents.config import agent_manifest
 
 app = FastAPI(title="Competitive Intelligence Agent Dashboard")
@@ -274,13 +275,61 @@ DEMO_REPORTS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Demo research briefs — what the Strategy/Research-Planner agent produces from
+# ActivTrak's own context (messaging pillars · roadmap · solution map / ICP).
+# The brief DIRECTS the rest of the pipeline: prioritized lenses, who to frame
+# for, and which pillars to anchor the battle card in. DEMO_LENSES tags each
+# pre-canned gap with the lens it answers (same order as the report's gaps).
+# ---------------------------------------------------------------------------
+DEMO_BRIEFS = {
+    "teramind": {
+        "directive": "Expose where Teramind's heavy, 'real-time' surveillance contradicts its own docs — and reframe each gap as a trust and bandwidth risk for privacy-conscious buyers.",
+        "lenses": [
+            {"name": "Real-time latency", "why": "Our 'real-time insight' positioning makes their upload lag a direct credibility hit."},
+            {"name": "Security integrity", "why": "Their bypassable logging undercuts the 'secure' claim our buyers must be able to trust."},
+            {"name": "Agent weight & bandwidth", "why": "We sell a lightweight agent — their 350 kbps load is an IT objection we win."},
+        ],
+        "icp": "IT & People-Ops leaders at privacy-conscious, regulated mid-market companies",
+        "pillars": ["Trust", "Lightweight", "Insight, not surveillance"],
+    },
+    "hubstaff": {
+        "directive": "Show how Hubstaff's mouse-movement scoring and idle popups misread real work — and position ActivTrak's outcome-based, non-intrusive measurement for knowledge teams.",
+        "lenses": [
+            {"name": "Measurement validity", "why": "We sell fair, outcome-based productivity — their keyboard/mouse scoring is the gap to attack."},
+            {"name": "Worker experience & trust", "why": "Our pillar is trust — their interruptive idle popups erode it."},
+        ],
+        "icp": "People-Ops & team leads measuring hybrid knowledge workers",
+        "pillars": ["Trust", "Outcome-based measurement", "Respect deep work"],
+    },
+    "timedoctor": {
+        "directive": "Expose Time Doctor's coarse sampling and lagging screenshots, and frame ActivTrak as the privacy-first, true-focus alternative for trust-sensitive teams.",
+        "lenses": [
+            {"name": "Data resolution", "why": "Our 'true focus' positioning beats their 15-second coarse sampling."},
+            {"name": "Privacy & surveillance", "why": "Our pillar is trust — their screenshots and idle micromanagement clash with it."},
+            {"name": "Real-time integrity", "why": "Their up-to-10-minute screenshot lag undercuts the 'real-time' claim our buyers test."},
+        ],
+        "icp": "IT & People-Ops leaders at trust-sensitive, hybrid organizations",
+        "pillars": ["Trust", "Privacy-first", "True focus measurement"],
+    },
+}
+
+DEMO_LENSES = {
+    "teramind":   ["Real-time latency", "Security integrity", "Agent weight & bandwidth"],
+    "hubstaff":   ["Measurement validity", "Worker experience & trust"],
+    "timedoctor": ["Data resolution", "Privacy & surveillance", "Real-time integrity"],
+}
+
+
 class AnalyzeRequest(BaseModel):
     competitor_name: str
     doc_url: Optional[str] = None
     marketing_claims: str
-    own_positioning: str
+    own_positioning: str            # your messaging pillars / positioning
+    roadmap: Optional[str] = None   # business context (would sync from a roadmap tool)
+    icp: Optional[str] = None       # solution map / ideal customer profile (would sync from CRM)
     demo_mode: bool = False
-    api_key: Optional[str] = None  # bring-your-own-key for live mode; never stored/logged
+    api_key: Optional[str] = None   # bring-your-own-key for live mode; never stored/logged
 
 
 def _doc_stats(raw_doc: str):
@@ -322,7 +371,7 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
     try:
         await emit({"type": "mode", "demo": request.demo_mode,
                     "competitor": request.competitor_name}, PACE)
-        # Manifest of the four specialized agents (label, specialty, reasoning
+        # Manifest of the five specialized agents (label, specialty, reasoning
         # level, accent) so the run-timeline can present each as distinct.
         await emit({"type": "pipeline", "agents": agent_manifest()}, PACE)
 
@@ -330,18 +379,44 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         # report honest, data-derived stats instead of scripted prose.
         report = None
         preliminary_gaps = []
+        comp_key = "teramind"
         if request.demo_mode:
             name_lower = request.competitor_name.lower()
             if "hubstaff" in name_lower:
                 comp_key = "hubstaff"
             elif "time doctor" in name_lower or "timedoctor" in name_lower:
                 comp_key = "timedoctor"
-            else:
-                comp_key = "teramind"
             report = dict(DEMO_REPORTS[comp_key])
             report["competitor_name"] = request.competitor_name
+            # tag each pre-canned gap with the research lens it answers
+            lenses = DEMO_LENSES.get(comp_key, [])
+            report["gaps"] = [{**g, "lens": lenses[i] if i < len(lenses) else None}
+                              for i, g in enumerate(report["gaps"])]
             raw_doc = report["raw_doc"]
             preliminary_gaps = report.get("preliminary_gaps", [])
+
+        # ── Strategy / Research-Planner ──────────────────────────────────────
+        # Reads your internal context (pillars · roadmap · ICP) → a research
+        # brief that directs the rest of the pipeline.
+        await emit({"type": "agent", "agent": "strategy", "phase": "start"}, PACE)
+        t0 = time.perf_counter()
+        if request.demo_mode:
+            brief = DEMO_BRIEFS.get(comp_key, DEMO_BRIEFS["teramind"])
+        else:
+            brief_obj = await run_strategy_agent(
+                request.competitor_name, request.own_positioning,
+                request.roadmap or "", request.icp or "", api_key=request.api_key)
+            brief = brief_obj.model_dump()
+        brief_text = (
+            f"Directive: {brief['directive']}\n"
+            "Priority lenses: " + "; ".join(f"{l['name']} ({l['why']})" for l in brief["lenses"]) + "\n"
+            f"Frame all findings for this buyer: {brief['icp']}\n"
+            f"Anchor the battle card in these pillars: {', '.join(brief['pillars'])}"
+        )
+        await emit({"type": "brief", "brief": brief}, PACE)
+        await emit({"type": "agent", "agent": "strategy", "phase": "done",
+                    "detail": f"{len(brief['lenses'])} research lenses set · framed for {brief['icp'].split(' at ')[0].split(',')[0]}",
+                    "elapsed_ms": el(t0)}, PACE)
 
         # ── Discovery ────────────────────────────────────────────────────────
         await emit({"type": "agent", "agent": "discovery", "phase": "start"}, PACE)
@@ -381,7 +456,8 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         if not request.demo_mode:
             analysis_details = await run_analysis_agent(
                 request.competitor_name, doc_summary,
-                request.marketing_claims, request.own_positioning, api_key=request.api_key)
+                request.marketing_claims, request.own_positioning,
+                research_brief=brief_text, api_key=request.api_key)
         analysis_detail = (f"{len(report['gaps'])} claim-vs-reality gaps identified"
                            if request.demo_mode else "Claims contrasted against documented reality")
         await emit({"type": "agent", "agent": "analysis", "phase": "done",
@@ -393,7 +469,7 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         t0 = time.perf_counter()
         synthesis_report = None
         if not request.demo_mode:
-            synthesis_report = await run_synthesis_agent(request.competitor_name, analysis_details, api_key=request.api_key)
+            synthesis_report = await run_synthesis_agent(request.competitor_name, analysis_details, research_brief=brief_text, api_key=request.api_key)
         await emit({"type": "agent", "agent": "synthesis", "phase": "done",
                     "detail": "Battle card + gap matrix · schema-valid (CompetitorReport)",
                     "elapsed_ms": el(t0)}, PACE)
@@ -414,6 +490,7 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
                     "detail": check_detail,
                     "elapsed_ms": el(t0)}, PACE)
 
+        report["research_brief"] = brief
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["result"] = report
         await emit({"type": "completed", "data": report})

@@ -16,6 +16,19 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 # ---------------------------------------------------------------------------
 # Personas (system instructions)
 # ---------------------------------------------------------------------------
+STRATEGY_PERSONA = (
+    "You are the Strategy / Research-Planning Agent — the first step of the pipeline.\n"
+    "You read the user's OWN internal business context: their messaging pillars, product "
+    "roadmap, and solution map / ICP (ideal customer profile). You do NOT analyze the "
+    "competitor yet. Instead you turn that context into a focused research brief that "
+    "directs the rest of the pipeline:\n"
+    "1. Prioritized 'lenses' — the few competitor capabilities most worth scrutinising, "
+    "ordered by what matters to this company's strategy and buyers.\n"
+    "2. The ICP framing — who the findings should be written for.\n"
+    "3. The messaging pillars the final battle card should be anchored in.\n"
+    "Output a concise, structured brief. Set the research agenda; let the later agents execute it."
+)
+
 DISCOVERY_PERSONA = (
     "You are a Discovery and Monitoring Agent for Competitive Intelligence.\n"
     "Your job is to read and ingest the technical documentation provided by the user. "
@@ -66,6 +79,12 @@ CHECKING_PERSONA = (
 # drive the run-timeline UI (surfaced via the SSE "pipeline" manifest).
 # ---------------------------------------------------------------------------
 AGENT_SPECS = {
+    "strategy": {
+        "label": "Strategy", "persona": STRATEGY_PERSONA,
+        "specialty": "Research planning from your context",
+        "capability": "internal knowledge", "thinking": ThinkingLevel.HIGH,
+        "accent": "amber", "star": False,
+    },
     "discovery": {
         "label": "Discovery", "persona": DISCOVERY_PERSONA,
         "specialty": "Documentation ingestion",
@@ -92,7 +111,7 @@ AGENT_SPECS = {
     },
 }
 
-AGENT_ORDER = ["discovery", "analysis", "synthesis", "checking"]
+AGENT_ORDER = ["strategy", "discovery", "analysis", "synthesis", "checking"]
 
 
 def agent_manifest() -> list:

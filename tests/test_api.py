@@ -120,10 +120,17 @@ async def test_demo_workflow_emits_full_structured_timeline(monkeypatch):
     tool_names = {e["name"] for e in events if e["type"] == "tool"}
     assert {"fetch_competitor_docs", "compare_claims_to_docs"} <= tool_names
 
-    # all four agents reported a 'done' phase
+    # all five agents reported a 'done' phase (incl. the Strategy planner)
     done_agents = {e["agent"] for e in events
                    if e["type"] == "agent" and e.get("phase") == "done"}
-    assert done_agents == {"discovery", "analysis", "synthesis", "checking"}
+    assert done_agents == {"strategy", "discovery", "analysis", "synthesis", "checking"}
+
+    # the Strategy agent emitted a research brief that steered the run
+    assert any(e["type"] == "brief" for e in events)
+    brief = report["research_brief"]
+    assert brief["lenses"] and brief["icp"] and brief["pillars"]
+    # every gap is tagged with the lens it answers
+    assert all(g.get("lens") for g in report["gaps"])
 
     # cleanup module-level state
     jobs.pop(job_id, None)

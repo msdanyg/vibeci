@@ -71,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
       doc_url: docUrlInput.value,
       marketing_claims: claimsInput.value,
       own_positioning: $('own-positioning').value,
+      roadmap: $('roadmap').value,
+      icp: $('icp').value,
       demo_mode: demo,
     };
     if (!demo && key) payload.api_key = key;
@@ -110,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       switch (ev.type) {
         case 'mode':   setMode(ev.demo); break;
         case 'pipeline': buildPipeline(ev.agents); break;
+        case 'brief':  onBrief(ev.brief); break;
         case 'agent':  ev.phase === 'start' ? agentStart(ev.agent) : agentDone(ev.agent, ev.detail, ev.elapsed_ms); break;
         case 'tool':   addTool(ev); break;
         case 'doc':    streamDoc(ev.raw_doc); break;
@@ -159,6 +162,29 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="tools"></div>
         </div>
       </div>`).join('');
+  }
+
+  // The Strategy agent's research brief — show its lenses live under the
+  // strategy row, and stash it for the results panel.
+  function onBrief(brief) {
+    const r = row('strategy');
+    if (r && brief && brief.lenses) {
+      r.querySelector('.tools').innerHTML =
+        '<div class="tool-card"><div class="tool-io">' +
+        brief.lenses.map((l, i) => `<div><span class="k">lens ${i + 1}:</span> ${escapeHtml(l.name)}</div>`).join('') +
+        '</div></div>';
+    }
+  }
+
+  function renderBrief(brief) {
+    const panel = $('brief-panel');
+    if (!brief || !brief.lenses) { panel.hidden = true; return; }
+    $('brief-directive').textContent = brief.directive || '';
+    $('brief-lenses').innerHTML = (brief.lenses || []).map(l =>
+      `<li><span class="lens-name">${escapeHtml(l.name)}</span> — <span class="lens-why">${escapeHtml(l.why)}</span></li>`).join('');
+    $('brief-icp').textContent = brief.icp || '';
+    $('brief-pillars').innerHTML = (brief.pillars || []).map(p => `<span class="pillar-chip">${escapeHtml(p)}</span>`).join('');
+    panel.hidden = false;
   }
   function agentStart(agent) {
     const r = row(agent); if (!r) return;
@@ -319,6 +345,7 @@ why_quota();
   function renderResults(data) {
     docTitle = data.competitor_name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-docs.md';
     activeLine = null;
+    renderBrief(data.research_brief);
 
     // header + stats
     $('r-name').textContent = data.competitor_name;
@@ -342,6 +369,7 @@ why_quota();
       card.innerHTML = `
         <div class="gap-top">
           <span class="gap-no">GAP ${String(i + 1).padStart(2, '0')}</span>
+          ${g.lens ? `<span class="lens-tag">${escapeHtml(g.lens)}</span>` : ''}
           <span class="sev-pill ${sevClass(g.severity)}">${escapeHtml(sevLabel)}</span>
         </div>
         <div class="gap-split">
@@ -418,6 +446,14 @@ why_quota();
   function toMarkdown(d) {
     const L = [];
     L.push(`# Competitive Battle Card — ${d.competitor_name}`, '');
+    const rb = d.research_brief;
+    if (rb) {
+      L.push('## Research brief (directed by our strategy)');
+      L.push(`_${rb.directive}_`, '');
+      L.push('**Priority lenses:** ' + (rb.lenses || []).map(l => l.name).join(' · '));
+      L.push(`**Framed for:** ${rb.icp}`);
+      L.push(`**Anchored in:** ${(rb.pillars || []).join(', ')}`, '');
+    }
     L.push('## Key takeaways');
     (d.key_takeaways || []).forEach(t => L.push(`- ${t}`));
     L.push('', '## Claim vs. documented reality');

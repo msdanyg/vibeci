@@ -8,6 +8,7 @@ class ClaimGap(BaseModel):
     technical_reality: str
     severity: str  # e.g., 'High Gaps', 'Moderate Gaps', 'Minor Gaps'
     sales_impact: str
+    lens: str | None = None  # which research-brief lens this gap answers
 
 class ObjectionHandler(BaseModel):
     competitor_objection: str
@@ -26,23 +27,26 @@ class CompetitorReport(BaseModel):
     battle_card: BattleCard
     sales_landmines: list[str]
 
-async def run_synthesis_agent(competitor_name: str, analysis_details: str, api_key: str = None) -> CompetitorReport:
+async def run_synthesis_agent(competitor_name: str, analysis_details: str,
+                              research_brief: str = None, api_key: str = None) -> CompetitorReport:
     """Runs the Synthesis Agent using the Antigravity SDK to generate structured competitive reports.
-    
+
     This agent takes the technical analysis details and generates a Pydantic-validated JSON output
     that matches the CompetitorReport schema.
     """
     # Create config with response_schema
     config = get_agent_config("synthesis", response_schema=CompetitorReport, api_key=api_key)
-    
+
     async with Agent(config) as agent:
         prompt = (
             f"You are synthesizing the competitive intelligence for competitor '{competitor_name}'.\n\n"
             f"### Technical Analysis details:\n{analysis_details}\n\n"
+            f"### Research brief (anchor the battle card in these pillars; tag each gap with its lens; frame for the brief's buyer):\n{research_brief or '(none)'}\n\n"
             "Format your response to match the requested JSON schema. Populate all fields: key takeaways, "
-            "the list of claim-vs-reality gaps (marketing claim, technical reality, severity, sales impact), "
-            "the sales battle card (elevator pitch, strengths, weaknesses, objection handling), and specific "
-            "sales landmines. Make sure the content is highly detailed and directly references facts from the analysis."
+            "the list of claim-vs-reality gaps (marketing claim, technical reality, severity, sales impact, "
+            "and `lens` = the research-brief lens that gap answers), the sales battle card (elevator pitch "
+            "written in our pillars, strengths, weaknesses, objection handling), and specific sales landmines. "
+            "Reference facts from the analysis and keep everything framed for the brief's buyer."
         )
         response = await agent.chat(prompt)
         structured_data = await response.structured_output()
