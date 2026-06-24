@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VibeCI reads a competitor's technical documentation and surfaces the gap between their marketing claims and documented reality — every claim grounded to a source line.">
+  <title>VibeCI — Competitive Intelligence, grounded in the docs</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='72' font-size='64' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'>V</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=11">
+</head>
+<body>
+  <!-- ===================== App bar ===================== -->
+  <header class="appbar">
+    <div class="brand">
+      <span class="mark">V</span>
+      <span class="brand-name">VibeCI</span>
+      <span class="brand-sub">Competitive intelligence</span>
+    </div>
+    <div class="appbar-right">
+      <span id="mode-chip" class="mode-chip mode-demo">
+        <span class="dot"></span><span id="mode-text">Demo data · public docs</span>
+      </span>
+      <button id="copy-md-btn" class="btn" hidden>Copy as Markdown</button>
+      <button id="new-btn" class="btn btn-primary" hidden>New analysis</button>
+    </div>
+  </header>
+
+  <main id="stage">
+
+    <!-- ===================== STATE 1 · Config ===================== -->
+    <section id="view-config" class="view active">
+      <div class="config-wrap">
+        <div class="config-intro">
+          <span class="eyebrow">Agents for Business</span>
+          <h1>Catch the gap between<br>a competitor's <span class="grad">claims and their docs.</span></h1>
+          <p>VibeCI runs a four-agent pipeline over a competitor's technical documentation, then shows you exactly where their marketing claims break down — every finding grounded to a source line you can click.</p>
+        </div>
+
+        <form id="analyze-form" class="config-card card">
+          <fieldset>
+            <legend>Your company</legend>
+            <div class="field">
+              <label for="own-domain">Domain</label>
+              <input type="text" id="own-domain" value="ActivTrak.com" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="own-positioning">Positioning</label>
+              <textarea id="own-positioning" rows="3" required>We focus on privacy-first employee productivity insights. We track active application window titles and active/idle state, but we exclude screen recording, camera access, and keystroke logging to protect trust.</textarea>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Competitor</legend>
+            <div class="field-row">
+              <div class="field">
+                <label for="competitor-name">Name</label>
+                <select id="competitor-name">
+                  <option value="Teramind">Teramind</option>
+                  <option value="Hubstaff">Hubstaff</option>
+                  <option value="Time Doctor">Time Doctor</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="doc-url">Documentation URL</label>
+                <input type="text" id="doc-url" value="mock://teramind-kb.org/api/v4/specs" autocomplete="off">
+              </div>
+            </div>
+            <div class="field">
+              <label for="marketing-claims">Marketing claims to test</label>
+              <textarea id="marketing-claims" rows="3" required>Real-time session monitoring with zero-latency, secure keystroke logging for instant threat mitigation, and a lightweight desktop agent.</textarea>
+            </div>
+          </fieldset>
+
+          <div class="config-actions">
+            <label class="toggle">
+              <input type="checkbox" id="demo-mode" checked>
+              <span class="track"></span>
+              <span class="toggle-label">Demo mode<span class="toggle-hint">pre-ingested public docs · no API key</span></span>
+            </label>
+            <button type="submit" id="run-btn" class="btn btn-primary btn-lg">
+              <span class="btn-text">Run analysis</span>
+              <span class="spinner"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===================== STATE 2 · Run ===================== -->
+    <section id="view-run" class="view">
+      <div class="page">
+        <div class="run-head">
+          <div>
+            <span class="eyebrow">Analyzing · how it works</span>
+            <h1 id="run-competitor">Competitor</h1>
+            <p class="head-sub">A look under the hood: the four-agent pipeline producing your analysis, step by step.</p>
+          </div>
+          <div class="run-elapsed"><span id="run-elapsed">0.0s</span> elapsed</div>
+        </div>
+
+        <div id="run-error" class="run-error" role="alert" hidden>
+          <div class="re-icon" aria-hidden="true">!</div>
+          <div class="re-body">
+            <div class="re-title">Live analysis couldn't complete</div>
+            <div class="re-msg" id="run-error-msg"></div>
+            <div class="re-actions">
+              <button class="btn btn-primary" id="re-demo">Run in Demo mode instead</button>
+              <button class="btn" id="re-back">Back to setup</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <div class="section-label"><h2>Agent pipeline</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
+            <p class="section-note">Four AI agents run in sequence. Each row shows the real MCP tool it called and what came back — this is how the findings are produced.</p>
+            <div id="timeline" class="timeline" aria-live="polite" aria-label="Agent pipeline progress">
+              <div class="trow" data-agent="discovery">
+                <div class="tdot"></div>
+                <div class="tmain">
+                  <div class="thead"><span class="tname">Discovery</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
+                  <div class="tdetail"></div>
+                  <div class="tools"></div>
+                </div>
+              </div>
+              <div class="trow star" data-agent="analysis">
+                <div class="tdot"></div>
+                <div class="tmain">
+                  <div class="thead"><span class="tname">Technical Analysis</span><span class="star-tag">★ core</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
+                  <div class="tdetail"></div>
+                  <div class="tools"></div>
+                </div>
+              </div>
+              <div class="trow" data-agent="synthesis">
+                <div class="tdot"></div>
+                <div class="tmain">
+                  <div class="thead"><span class="tname">Synthesis</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
+                  <div class="tdetail"></div>
+                  <div class="tools"></div>
+                </div>
+              </div>
+              <div class="trow" data-agent="checking">
+                <div class="tdot"></div>
+                <div class="tmain">
+                  <div class="thead"><span class="tname">Fact-Checking</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
+                  <div class="tdetail"></div>
+                  <div class="tools"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="evidence">
+            <div class="section-label"><h2>Source document</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
+            <p class="section-note">The competitor's own technical docs, fetched by the Discovery agent — the text every claim is checked against.</p>
+            <div class="evidence-card">
+              <div class="evidence-head">
+                <span class="ev-id"><span class="live-dot"></span>
+                  <span class="ev-text">
+                    <span class="ev-title" id="run-doc-title">Awaiting Discovery agent…</span>
+                    <span class="ev-kind">Fetched via the <code>fetch_competitor_docs</code> MCP tool</span>
+                  </span>
+                </span>
+                <span class="meta" id="run-doc-meta"></span>
+              </div>
+              <div class="doc-body" id="run-doc-body">
+                <div class="doc-empty">The ingested documentation will stream in here.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== STATE 3 · Results ===================== -->
+    <section id="view-results" class="view">
+      <div class="page">
+        <div class="result-head">
+          <div>
+            <span class="eyebrow">Competitive Intelligence</span>
+            <h1 id="r-name">Competitor</h1>
+            <p class="sub" id="r-sub">Claims tested against the vendor's own technical documentation.</p>
+          </div>
+          <div class="stat-strip">
+            <div class="stat"><div class="num" id="s-gaps">0</div><div class="lbl">Gaps</div></div>
+            <div class="stat"><div class="num high" id="s-high">0</div><div class="lbl">High&nbsp;severity</div></div>
+            <div class="stat"><div class="num grounded" id="s-ground">100%</div><div class="lbl">Grounded</div></div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <div class="section-label"><h2>Claim vs. documented reality</h2><span class="find-tag">The findings</span><span class="rule"></span></div>
+            <p class="section-note">What VibeCI found for your sales team: each card pairs a marketing claim with what the competitor's docs actually say, plus how to use the gap in a deal.</p>
+            <div id="gap-stack"></div>
+          </div>
+
+          <div class="evidence">
+            <div class="section-label"><h2>Source evidence</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
+            <p class="section-note">The competitor's own published documentation. Every finding on the left is grounded to a line in here — click a “View source” citation to jump straight to it.</p>
+            <div class="evidence-card">
+              <div class="evidence-head">
+                <span class="ev-id"><span class="src-dot"></span>
+                  <span class="ev-text">
+                    <span class="ev-title" id="doc-title">source.md</span>
+                    <span class="ev-kind">Competitor's technical documentation · grounding source</span>
+                  </span>
+                </span>
+                <span class="meta" id="doc-meta"></span>
+              </div>
+              <div class="doc-body" id="doc-body"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaways">
+          <h3>Key takeaways</h3>
+          <ul id="takeaways"></ul>
+        </div>
+
+        <details class="block" open>
+          <summary><span class="sgroup"><span class="chev">›</span> Sales battle card</span><span class="hint">pitch · strengths · objections</span></summary>
+          <div class="block-body">
+            <div class="pitch">
+              <div class="plabel">Elevator pitch</div>
+              <p id="pitch"></p>
+            </div>
+            <div class="sw">
+              <div class="sw-col w"><h4>Competitor weaknesses</h4><ul id="weak"></ul></div>
+              <div class="sw-col s"><h4>Competitor strengths</h4><ul id="strong"></ul></div>
+            </div>
+            <h4 class="obj-label">Objection handling</h4>
+            <div class="obj" id="objections"></div>
+          </div>
+        </details>
+
+        <details class="block">
+          <summary><span class="sgroup"><span class="chev">›</span> Discovery questions <span class="faint">(sales landmines)</span></span></summary>
+          <div class="block-body"><div class="landmines" id="landmines"></div></div>
+        </details>
+
+        <details class="block">
+          <summary><span class="sgroup"><span class="chev">›</span> Structured output <span class="method-tag">⚙ under the hood</span></span><span class="schema-chip">✓ schema validated · CompetitorReport</span></summary>
+          <div class="block-body">
+            <p class="section-note">The exact JSON the agents produce, validated against the <code>CompetitorReport</code> Pydantic schema before it reaches this screen — the data contract behind everything above.</p>
+            <pre class="json" id="json"></pre>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="appfoot">
+    <span>Deployable on Google Cloud Run · FastAPI + SSE</span>
+    <span class="dotsep">·</span>
+    <span>4 agents over an MCP tool server</span>
+  </footer>
+
+  <script src="js/app.js?v=11"></script>
+</body>
+</html>
