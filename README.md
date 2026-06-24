@@ -10,6 +10,8 @@
 
 **🔗 Live demo:** **[vibeci-107532323288.us-central1.run.app](https://vibeci-107532323288.us-central1.run.app)** — runs in Demo mode, no key needed. Pick a competitor → Run analysis → click a citation to jump to the source line.
 
+![VibeCI walkthrough — config → the four-agent pipeline → a battle card with every claim grounded to a source line → "what just happened" context](assets/demo.gif)
+
 ---
 
 ## 🎯 The Problem
