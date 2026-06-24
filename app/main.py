@@ -460,6 +460,16 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         await emit({"type": "agent", "agent": "strategy", "phase": "start"}, PACE)
         t0 = time.perf_counter()
         if request.demo_mode:
+            # Illustrate pulling your context from the connected sources — this is
+            # what runs automatically in production (here it's mocked).
+            for src, pull, res in (
+                ("Confluence", "messaging pillars", "Trust · Lightweight · Insight, not surveillance"),
+                ("Productboard", "product roadmap", "Privacy-first Focus insights · no keystroke logging"),
+                ("Salesforce", "solution map & ICP", "Mid-market IT/People-Ops · privacy-conscious"),
+            ):
+                await emit({"type": "tool", "agent": "strategy", "name": f"sync · {src}",
+                            "transport": "connector · mock",
+                            "args": {"pull": pull}, "result": res}, 0.5)
             brief = DEMO_BRIEFS.get(comp_key, DEMO_BRIEFS["teramind"])
         else:
             brief_obj = await run_strategy_agent(

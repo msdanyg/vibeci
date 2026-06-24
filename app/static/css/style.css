@@ -356,6 +356,46 @@ pre.json { background:#0F1115; color:#E3E6EB; font-family:var(--font-mono); font
   .about-head { flex-direction:column; }
 }
 
+/* ---------- Walkthrough orientation ---------- */
+.walkthrough-note { display:flex; align-items:flex-start; gap:13px; max-width:880px; margin:0 auto 22px; background:var(--brand-50); border:1px solid #DAD7F7; border-radius:var(--r-md); padding:14px 18px; }
+.wt-badge { flex:0 0 auto; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:var(--brand-600); border-radius:var(--r-full); padding:3px 10px; margin-top:2px; }
+.walkthrough-note p { font-size:13.5px; color:var(--text-default); line-height:1.55; }
+.walkthrough-note strong { color:var(--text-strong); }
+
+/* ---------- Business context as connected sources ---------- */
+.ctx-block { margin-bottom:22px; padding-bottom:20px; border-bottom:1px solid var(--divider); }
+.ctx-block-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.ctx-block-title { font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
+.synced-badge { display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600; color:var(--positive); background:var(--positive-bg); border:1px solid var(--positive-border); border-radius:var(--r-full); padding:3px 11px; }
+.synced-badge .dot { width:7px; height:7px; border-radius:50%; background:var(--positive); }
+.source-chips { display:flex; flex-wrap:wrap; gap:10px; }
+.source-chip { display:inline-flex; align-items:center; gap:8px; background:var(--bg-surface); border:1px solid var(--border-strong); border-radius:var(--r-md); padding:9px 13px; font-size:13px; box-shadow:var(--shadow-xs); }
+.source-chip .src-name { font-weight:600; color:var(--text-strong); }
+.source-chip .src-name::before { content:"✓ "; color:var(--positive); font-weight:700; }
+.source-chip .src-what { color:var(--text-muted); font-size:12px; }
+/* One-time "pulling business context" entrance — chips sync in sequence on first load */
+.source-chip { transition:opacity .35s ease, transform .35s ease, border-color .35s ease, box-shadow .35s ease; }
+.source-chip.is-pending { opacity:.4; }
+.source-chip.is-pending .src-name::before { content:"○ "; color:var(--text-faint); }
+.source-chip.just-synced { animation:chip-pop .55s ease; }
+@keyframes chip-pop {
+  0% { transform:scale(1); }
+  35% { transform:scale(1.05); border-color:var(--positive); box-shadow:0 0 0 3px var(--positive-bg); }
+  100% { transform:scale(1); }
+}
+.synced-badge.is-syncing { color:var(--text-muted); background:var(--bg-subtle); border-color:var(--border-strong); }
+.synced-badge.is-syncing .dot { background:var(--text-muted); animation:badge-pulse 1s ease-in-out infinite; }
+@keyframes badge-pulse { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+@media (prefers-reduced-motion: reduce) {
+  .source-chip.is-pending { opacity:1; }
+  .source-chip, .source-chip.just-synced { animation:none; transition:none; }
+  .synced-badge.is-syncing .dot { animation:none; }
+}
+.ctx-toggle { margin-top:14px; background:none; border:none; color:var(--brand-600); font-family:var(--font-ui); font-size:12.5px; font-weight:600; cursor:pointer; padding:0; }
+.ctx-toggle:hover { color:var(--brand-700); }
+.ctx-details { margin-top:13px; display:grid; gap:12px; }
+.ctx-mock-note { font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:13px; }
+
 /* ---------- Business-context inputs (config) ---------- */
 .legend-note { font-weight:400; text-transform:none; letter-spacing:0; color:var(--text-faint); }
 .ctx-field { margin-bottom:13px; }

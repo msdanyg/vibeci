@@ -241,13 +241,14 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key_here vibeci   # key optional;
 │   ├── main.py              # FastAPI backend — job queue, SSE timeline, pipeline orchestration
 │   ├── mcp_server.py        # MCP server: fetch_competitor_docs + compare_claims_to_docs
 │   ├── agents/
-│   │   ├── config.py        # Shared model config + the four agent personas
+│   │   ├── config.py        # Shared model config + the five agent personas
+│   │   ├── strategy.py      # Strategy Agent — reads business context → Research Brief
 │   │   ├── discovery.py     # Discovery Agent — uses the MCP server over stdio
 │   │   ├── analysis.py      # Technical Analysis Agent ★
 │   │   ├── synthesis.py     # Synthesis Agent — Pydantic structured output
 │   │   └── checking.py      # Fact-Checking / QC Agent
 │   └── static/              # Frontend — vanilla HTML/CSS/JS, no framework, no build
-│       ├── index.html       # 3 states: config → run timeline → results
+│       ├── index.html       # 5 views: config → run → results → landscape → about
 │       ├── css/style.css    # Light, SaaS-grade design system
 │       └── js/app.js        # SSE client, run timeline, results + real source grounding
 ├── Dockerfile

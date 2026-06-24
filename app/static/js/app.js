@@ -52,6 +52,42 @@ document.addEventListener('DOMContentLoaded', () => {
   setMode(demoToggle.checked);
   syncKeyField();
 
+  // One-time "pulling your business context" entrance: the connector chips sync
+  // in sequence on first load, so the viewer sees the context being *pulled* from
+  // the sources (Confluence/Productboard/Salesforce) — not just sitting there. In
+  // production this sync happens automatically; here it's the visible step 1.
+  function playContextSync() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return; // HTML default already shows the synced state
+    const badge = $('ctx-badge');
+    const chips = Array.from(document.querySelectorAll('#analyze-form .source-chip'));
+    if (!badge || !chips.length) return;
+    const sbText = badge.querySelector('.sb-text');
+    badge.classList.add('is-syncing');
+    if (sbText) sbText.textContent = 'Syncing…';
+    chips.forEach(c => c.classList.add('is-pending'));
+    chips.forEach((chip, i) => {
+      setTimeout(() => {
+        chip.classList.remove('is-pending');
+        chip.classList.add('just-synced');
+        setTimeout(() => chip.classList.remove('just-synced'), 600);
+      }, 450 + i * 420);
+    });
+    setTimeout(() => {
+      badge.classList.remove('is-syncing');
+      if (sbText) sbText.textContent = 'Synced & ready';
+    }, 450 + chips.length * 420 + 200);
+  }
+  playContextSync();
+
+  // Review / edit the synced business context
+  $('ctx-toggle').addEventListener('click', () => {
+    const d = $('ctx-details'), open = d.hidden;
+    d.hidden = !open;
+    $('ctx-toggle').setAttribute('aria-expanded', String(open));
+    $('ctx-toggle').textContent = open ? 'Hide context ▴' : 'Review / edit the synced context ▾';
+  });
+
   // =========================================================================
   // Submit → run
   // =========================================================================
@@ -112,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
       switch (ev.type) {
         case 'mode':   setMode(ev.demo); break;
         case 'pipeline': buildPipeline(ev.agents); break;
-        case 'brief':  onBrief(ev.brief); break;
         case 'agent':  ev.phase === 'start' ? agentStart(ev.agent) : agentDone(ev.agent, ev.detail, ev.elapsed_ms); break;
         case 'tool':   addTool(ev); break;
         case 'doc':    streamDoc(ev.raw_doc); break;
@@ -141,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('timeline').innerHTML = '';   // rows are (re)built from the 'pipeline' manifest
   }
 
-  // Build the four specialized agent rows from the backend manifest (config.py),
+  // Build the specialized agent rows from the backend manifest (config.py),
   // so each row's specialty, capability, reasoning level, model, and accent are
   // the agent's real config — not hardcoded in the page.
   function buildPipeline(agents) {
@@ -164,18 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`).join('');
   }
 
-  // The Strategy agent's research brief — show its lenses live under the
-  // strategy row, and stash it for the results panel.
-  function onBrief(brief) {
-    const r = row('strategy');
-    if (r && brief && brief.lenses) {
-      r.querySelector('.tools').innerHTML =
-        '<div class="tool-card"><div class="tool-io">' +
-        brief.lenses.map((l, i) => `<div><span class="k">lens ${i + 1}:</span> ${escapeHtml(l.name)}</div>`).join('') +
-        '</div></div>';
-    }
-  }
-
+  // The Strategy agent's research brief renders in the results panel (from the
+  // completed report). In the run view its lenses show in the agent's "done"
+  // detail; the connector sync cards stay as the "gathering context" visual.
   function renderBrief(brief) {
     const panel = $('brief-panel');
     if (!brief || !brief.lenses) { panel.hidden = true; return; }

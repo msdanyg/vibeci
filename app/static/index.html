@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=15">
+  <link rel="stylesheet" href="css/style.css?v=18">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -35,35 +35,48 @@
     <section id="view-config" class="view active">
       <div class="config-wrap">
         <div class="config-intro">
-          <span class="eyebrow">Agents for Business</span>
+          <span class="eyebrow">Agents for Business · guided walkthrough</span>
           <h1>Catch the gap between<br>a competitor's <span class="grad">claims and their docs.</span></h1>
-          <p>VibeCI reads <strong>your</strong> strategy, then runs a five-agent pipeline over a competitor's technical documentation — showing exactly where their marketing breaks down, framed for your buyer and grounded to a source line you can click.</p>
+          <p>VibeCI reads <strong>your</strong> strategy, then runs a five-agent pipeline over a competitor's docs — showing where their marketing breaks down, framed for your buyer and grounded to a source line.</p>
+        </div>
+
+        <div class="walkthrough-note">
+          <span class="wt-badge">Walkthrough</span>
+          <p>In production VibeCI runs <strong>automatically on your behalf</strong> — syncing your business context, reading competitors' docs, and producing battle cards with no manual work. The steps that follow simply <strong>illustrate what happens behind the scenes.</strong></p>
         </div>
 
         <form id="analyze-form" class="config-card card">
-          <fieldset>
-            <legend>Your business context <span class="legend-note">— steers what the agents hunt for</span></legend>
-            <div class="field">
-              <label for="own-domain">Domain</label>
-              <input type="text" id="own-domain" value="ActivTrak.com" autocomplete="off" required>
+          <!-- Business context: connected sources, already synced -->
+          <div class="ctx-block">
+            <div class="ctx-block-head">
+              <span class="ctx-block-title">Your business context <span class="faint">· ActivTrak.com</span></span>
+              <span class="synced-badge" id="ctx-badge"><span class="dot"></span> <span class="sb-text">Synced &amp; ready</span></span>
             </div>
-            <div class="ctx-field">
-              <div class="ctx-head"><label for="own-positioning">Messaging pillars</label><span class="connector-chip">⟿ Confluence <span class="mock">demo</span></span></div>
-              <textarea id="own-positioning" rows="2" required>Privacy-first workforce analytics. Pillars: Trust (no screenshots or keystroke logging), Lightweight (minimal agent, no bandwidth hit), Insight not surveillance (outcomes over monitoring).</textarea>
+            <div class="source-chips">
+              <span class="source-chip"><span class="src-name">Confluence</span> <span class="src-what">Messaging pillars</span></span>
+              <span class="source-chip"><span class="src-name">Productboard</span> <span class="src-what">Product roadmap</span></span>
+              <span class="source-chip"><span class="src-name">Salesforce</span> <span class="src-what">Solution map &amp; ICP</span></span>
             </div>
-            <div class="ctx-field">
-              <div class="ctx-head"><label for="roadmap">Product roadmap</label><span class="connector-chip">⟿ Productboard <span class="mock">demo</span></span></div>
-              <textarea id="roadmap" rows="2">Shipping privacy-first Focus &amp; Impact insights for hybrid teams; deepening HRIS/BI integrations. Explicitly NOT on the roadmap: keystroke logging or always-on screen capture.</textarea>
+            <button type="button" class="ctx-toggle" id="ctx-toggle" aria-expanded="false">Review / edit the synced context ▾</button>
+            <div class="ctx-details" id="ctx-details" hidden>
+              <div class="ctx-field">
+                <label for="own-positioning">Messaging pillars <span class="faint">· from Confluence</span></label>
+                <textarea id="own-positioning" rows="2">Privacy-first workforce analytics. Pillars: Trust (no screenshots or keystroke logging), Lightweight (minimal agent, no bandwidth hit), Insight not surveillance (outcomes over monitoring).</textarea>
+              </div>
+              <div class="ctx-field">
+                <label for="roadmap">Product roadmap <span class="faint">· from Productboard</span></label>
+                <textarea id="roadmap" rows="2">Shipping privacy-first Focus &amp; Impact insights for hybrid teams; deepening HRIS/BI integrations. Explicitly NOT on the roadmap: keystroke logging or always-on screen capture.</textarea>
+              </div>
+              <div class="ctx-field">
+                <label for="icp">Solution map &amp; ICP <span class="faint">· from Salesforce</span></label>
+                <textarea id="icp" rows="2">IT &amp; People-Ops leaders at mid-market/enterprise (200–5,000 employees), hybrid &amp; trust/privacy-conscious or regulated industries. Use cases: productivity benchmarking, capacity &amp; burnout, license optimization.</textarea>
+              </div>
             </div>
-            <div class="ctx-field">
-              <div class="ctx-head"><label for="icp">Solution map &amp; ICP</label><span class="connector-chip">⟿ Salesforce <span class="mock">demo</span></span></div>
-              <textarea id="icp" rows="2">IT &amp; People-Ops leaders at mid-market/enterprise (200–5,000 employees), hybrid &amp; trust/privacy-conscious or regulated industries. Use cases: productivity benchmarking, capacity &amp; burnout, license optimization.</textarea>
-            </div>
-            <p class="field-hint ctx-note">In production these sync from your roadmap tool, CRM, and wiki via connectors. Here they're editable Markdown — and they directly steer the Strategy agent's research brief.</p>
-          </fieldset>
+            <p class="ctx-mock-note">These connectors are illustrative for the demo — in production your context syncs live from these tools. It's what steers the agents' research brief.</p>
+          </div>
 
           <fieldset>
-            <legend>Competitor</legend>
+            <legend>Pick a competitor to analyze</legend>
             <div class="field-row">
               <div class="field">
                 <label for="competitor-name">Name</label>
@@ -135,7 +148,7 @@
         <div class="split">
           <div>
             <div class="section-label"><h2>Agent pipeline</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
-            <p class="section-note">Four AI agents run in sequence. Each row shows the real MCP tool it called and what came back — this is how the findings are produced.</p>
+            <p class="section-note">Five AI agents run in sequence — the first syncs your business context, the rest read the competitor's docs. Each row shows the real tool calls behind the findings.</p>
             <!-- rows are built from the SSE 'pipeline' manifest (config.py) -->
             <div id="timeline" class="timeline" aria-live="polite" aria-label="Agent pipeline progress"></div>
           </div>
@@ -297,7 +310,7 @@
           <div>
             <span class="eyebrow">How this works</span>
             <h1>What just happened</h1>
-            <p class="head-sub">VibeCI ran a four-agent pipeline that read a competitor's own technical docs and proved where their marketing overstates reality — every finding grounded to the source line.</p>
+            <p class="head-sub">VibeCI ran a five-agent pipeline that took your business context, read a competitor's own technical docs, and proved where their marketing overstates reality — every finding grounded to the source line.</p>
           </div>
           <button class="btn" id="about-back">← Back to results</button>
         </div>
@@ -312,8 +325,9 @@
 
           <article class="about-card">
             <span class="method-tag">⚙ the pipeline</span>
-            <h3>Four specialized agents, each tuned to its job</h3>
+            <h3>Five specialized agents, each tuned to its job</h3>
             <ul class="about-list">
+              <li><b>Strategy</b> — syncs your business context (pillars · roadmap · ICP) and sets the research brief that directs the rest. <i>The agenda-setter.</i></li>
               <li><b>Discovery</b> — ingests the competitor's docs through an MCP tool server. <i>Low reasoning, high throughput.</i></li>
               <li><b>Technical Analysis ★</b> — the star: high-reasoning claim-vs-reality contrast. This is the defensible part of the product.</li>
               <li><b>Synthesis</b> — structures the findings into a schema-validated battle card.</li>
@@ -332,7 +346,7 @@
             <span class="method-tag">⚙ under the hood</span>
             <h3>The technical build</h3>
             <ul class="about-list tech">
-              <li><b>Multi-agent orchestration</b> on the <code>google.antigravity</code> SDK (Gemini) — four agents with role-specific reasoning levels.</li>
+              <li><b>Multi-agent orchestration</b> on the <code>google.antigravity</code> SDK (Gemini) — five agents with role-specific reasoning levels.</li>
               <li><b>MCP tool server</b> (stdio) exposing the doc-fetch and claims pre-screen tools.</li>
               <li><b>Real source grounding</b> — every claim is matched to a line in the ingested doc, client-side, no hardcoded citations.</li>
               <li><b>Structured output</b> validated against a Pydantic <code>CompetitorReport</code> schema.</li>
@@ -364,9 +378,9 @@
   <footer class="appfoot">
     <span>Deployable on Google Cloud Run · FastAPI + SSE</span>
     <span class="dotsep">·</span>
-    <span>4 agents over an MCP tool server</span>
+    <span>5 agents over an MCP tool server</span>
   </footer>
 
-  <script src="js/app.js?v=15"></script>
+  <script src="js/app.js?v=18"></script>
 </body>
 </html>
