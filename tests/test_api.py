@@ -34,7 +34,7 @@ def test_unknown_stream_returns_404():
 
 
 def test_live_mode_requires_api_key(monkeypatch):
-    # Demo mode needs no key; live mode must reject when GEMINI_API_KEY is absent.
+    # Demo mode needs no key; live mode must reject when no key is available at all.
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     r = client.post("/api/analyze", json={
         "competitor_name": "Teramind",
@@ -43,7 +43,27 @@ def test_live_mode_requires_api_key(monkeypatch):
         "demo_mode": False,
     })
     assert r.status_code == 400
-    assert "GEMINI_API_KEY" in r.json()["detail"]
+    assert "key" in r.json()["detail"].lower()
+
+
+def test_live_mode_accepts_bring_your_own_key(monkeypatch):
+    # With no server key, a caller-supplied api_key passes the gate (the pipeline
+    # itself is stubbed here so no real network call is made).
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    async def _noop(job_id, request):
+        return
+    monkeypatch.setattr(main, "execute_workflow", _noop)
+
+    r = client.post("/api/analyze", json={
+        "competitor_name": "Teramind",
+        "marketing_claims": "x",
+        "own_positioning": "y",
+        "demo_mode": False,
+        "api_key": "byok-test-key",
+    })
+    assert r.status_code == 200
+    assert "job_id" in r.json()
 
 
 def test_demo_mode_starts_a_job_without_key(monkeypatch):

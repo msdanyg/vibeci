@@ -2,17 +2,18 @@ from google.antigravity import Agent
 from app.agents.config import get_agent_config
 
 async def run_analysis_agent(
-    competitor_name: str, 
-    doc_summary: str, 
-    marketing_claims: str, 
-    own_positioning: str
+    competitor_name: str,
+    doc_summary: str,
+    marketing_claims: str,
+    own_positioning: str,
+    api_key: str = None,
 ) -> str:
     """Runs the Technical Analysis Agent using the Antigravity SDK.
     
     This agent takes the documentation summary, marketing claims, and internal positioning
     to extract technical reality vs claims and feature gaps.
     """
-    config = get_agent_config("analysis")
+    config = get_agent_config("analysis", api_key=api_key)
     
     async with Agent(config) as agent:
         prompt = (

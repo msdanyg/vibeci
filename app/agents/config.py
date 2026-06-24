@@ -1,22 +1,21 @@
-import os
-from google.antigravity import LocalAgentConfig, types
 from dotenv import load_dotenv
+from google.antigravity import LocalAgentConfig, types
+from google.antigravity.models import (
+    ModelTarget, ModelType, GeminiAPIEndpoint, GeminiModelOptions, ThinkingLevel,
+)
 
 # Load environment variables
 load_dotenv()
 
-# Verify Gemini API key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    # We will let the SDK try to find it or raise a clear exception.
-    # Note: The agent can read it automatically from the environment.
-    pass
-
-# Default Model — gemini-2.0-flash is the correct, available model ID
+# Default model. gemini-2.0-flash is a known-available id; kept consistent across
+# agents for reliability (incl. the bring-your-own-key live path). Agents are
+# specialized below via reasoning effort, tools, and structured-output schema —
+# not by swapping in unverified model ids.
 DEFAULT_MODEL = "gemini-2.0-flash"
 
-# System Instructions / Personas for the agents
-
+# ---------------------------------------------------------------------------
+# Personas (system instructions)
+# ---------------------------------------------------------------------------
 DISCOVERY_PERSONA = (
     "You are a Discovery and Monitoring Agent for Competitive Intelligence.\n"
     "Your job is to read and ingest the technical documentation provided by the user. "
@@ -55,39 +54,91 @@ CHECKING_PERSONA = (
     "Check for the following criteria:\n"
     "1. Source grounding: Every limitation or gap attributed to a competitor must be directly backed by the technical documentation.\n"
     "2. No hallucinations or exaggerations.\n"
-    "3. Absolute confidentiality: Ensure no proprietary ActiveTrack data or internal customer IP is exposed.\n"
+    "3. Absolute confidentiality: Ensure no proprietary ActivTrak data or internal customer IP is exposed.\n"
     "4. Professional tone: The output must be objective, factual, and legally defensible.\n"
     "If any part of the synthesis fails these checks, correct it or call out the specific correction needed."
 )
 
-def get_agent_config(persona_type: str, tools: list = None, response_schema=None, mcp_servers: list = None) -> LocalAgentConfig:
-    """Helper function to create a LocalAgentConfig with standard settings.
-    
-    Args:
-        persona_type:  One of 'discovery', 'analysis', 'synthesis', 'checking'.
-        tools:         Optional list of Python callables to expose as tools.
-        response_schema: Optional Pydantic model for structured JSON output.
-        mcp_servers:   Optional list of McpStdioServer / McpStreamableHttpServer
-                       instances to connect to this agent.
+# ---------------------------------------------------------------------------
+# Per-agent specialization. Each agent is a distinct module with a real,
+# role-appropriate config: reasoning effort (ThinkingLevel), which tools it can
+# reach, and whether it emits a validated schema. `accent`/`specialty`/`capability`
+# drive the run-timeline UI (surfaced via the SSE "pipeline" manifest).
+# ---------------------------------------------------------------------------
+AGENT_SPECS = {
+    "discovery": {
+        "label": "Discovery", "persona": DISCOVERY_PERSONA,
+        "specialty": "Documentation ingestion",
+        "capability": "MCP doc tools", "thinking": ThinkingLevel.LOW,
+        "accent": "blue", "star": False,
+    },
+    "analysis": {
+        "label": "Technical Analysis", "persona": ANALYSIS_PERSONA,
+        "specialty": "Claim-vs-reality reasoning",
+        "capability": "deep reasoning", "thinking": ThinkingLevel.HIGH,
+        "accent": "indigo", "star": True,
+    },
+    "synthesis": {
+        "label": "Synthesis", "persona": SYNTHESIS_PERSONA,
+        "specialty": "Battle-card synthesis",
+        "capability": "structured schema", "thinking": ThinkingLevel.MEDIUM,
+        "accent": "teal", "star": False,
+    },
+    "checking": {
+        "label": "Fact-Checking", "persona": CHECKING_PERSONA,
+        "specialty": "Source-grounding QC",
+        "capability": "grounding QC", "thinking": ThinkingLevel.HIGH,
+        "accent": "green", "star": False,
+    },
+}
+
+AGENT_ORDER = ["discovery", "analysis", "synthesis", "checking"]
+
+
+def agent_manifest() -> list:
+    """Public, secret-free metadata for the frontend run-timeline (the four
+    specialized agents, in order). Reasoning level reflects each agent's real
+    ThinkingLevel config."""
+    return [
+        {
+            "agent": key,
+            "label": s["label"],
+            "specialty": s["specialty"],
+            "capability": s["capability"],
+            "thinking": s["thinking"].value,   # 'low' | 'medium' | 'high'
+            "model": DEFAULT_MODEL,
+            "accent": s["accent"],
+            "star": s["star"],
+        }
+        for key, s in ((k, AGENT_SPECS[k]) for k in AGENT_ORDER)
+    ]
+
+
+def get_agent_config(persona_type: str, tools: list = None, response_schema=None,
+                     mcp_servers: list = None, api_key: str = None) -> LocalAgentConfig:
+    """Build a LocalAgentConfig specialized for one agent.
+
+    The agent's reasoning effort comes from its `ThinkingLevel` (the ★ analysis
+    and QC agents think harder than discovery). `api_key`, when provided, is the
+    caller's bring-your-own-key — used only for this run, never stored or logged.
     """
-    if persona_type == "discovery":
-        instructions = DISCOVERY_PERSONA
-    elif persona_type == "analysis":
-        instructions = ANALYSIS_PERSONA
-    elif persona_type == "synthesis":
-        instructions = SYNTHESIS_PERSONA
-    elif persona_type == "checking":
-        instructions = CHECKING_PERSONA
-    else:
-        instructions = "You are a helpful assistant."
+    spec = AGENT_SPECS.get(persona_type)
+    instructions = spec["persona"] if spec else "You are a helpful assistant."
+    thinking = spec["thinking"] if spec else ThinkingLevel.MEDIUM
+
+    # A specialized model target: same base model, role-specific reasoning effort.
+    endpoint = GeminiAPIEndpoint(
+        api_key=api_key,
+        options=GeminiModelOptions(thinking_level=thinking),
+    )
+    target = ModelTarget(name=DEFAULT_MODEL, types=[ModelType.TEXT], endpoint=endpoint)
 
     return LocalAgentConfig(
-        model=DEFAULT_MODEL,
+        model=target,
+        api_key=api_key,
         system_instructions=instructions,
         tools=tools or [],
         mcp_servers=mcp_servers or [],
         response_schema=response_schema,
-        capabilities=types.CapabilitiesConfig(
-            enable_subagents=True
-        )
+        capabilities=types.CapabilitiesConfig(enable_subagents=True),
     )

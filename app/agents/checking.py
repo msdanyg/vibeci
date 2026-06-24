@@ -4,16 +4,17 @@ from app.agents.synthesis import CompetitorReport
 import json
 
 async def run_checking_agent(
-    competitor_name: str, 
-    doc_summary: str, 
-    synthesis_report: CompetitorReport
+    competitor_name: str,
+    doc_summary: str,
+    synthesis_report: CompetitorReport,
+    api_key: str = None,
 ) -> CompetitorReport:
     """Runs the Fact-Checking / QC Agent using the Antigravity SDK.
     
     This agent compares the synthesized report contents against the raw technical specs
     to ensure absolute accuracy and safety. It outputs a validated/corrected CompetitorReport.
     """
-    config = get_agent_config("checking", response_schema=CompetitorReport)
+    config = get_agent_config("checking", response_schema=CompetitorReport, api_key=api_key)
     
     # Serialize the report to JSON for the agent to inspect
     report_json = json.dumps(synthesis_report.model_dump(), indent=2)

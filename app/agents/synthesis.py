@@ -26,14 +26,14 @@ class CompetitorReport(BaseModel):
     battle_card: BattleCard
     sales_landmines: list[str]
 
-async def run_synthesis_agent(competitor_name: str, analysis_details: str) -> CompetitorReport:
+async def run_synthesis_agent(competitor_name: str, analysis_details: str, api_key: str = None) -> CompetitorReport:
     """Runs the Synthesis Agent using the Antigravity SDK to generate structured competitive reports.
     
     This agent takes the technical analysis details and generates a Pydantic-validated JSON output
     that matches the CompetitorReport schema.
     """
     # Create config with response_schema
-    config = get_agent_config("synthesis", response_schema=CompetitorReport)
+    config = get_agent_config("synthesis", response_schema=CompetitorReport, api_key=api_key)
     
     async with Agent(config) as agent:
         prompt = (

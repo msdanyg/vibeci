@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = $('analyze-form'), runBtn = $('run-btn'), demoToggle = $('demo-mode');
   const competitorSelect = $('competitor-name'), docUrlInput = $('doc-url'), claimsInput = $('marketing-claims');
   const modeChip = $('mode-chip'), modeText = $('mode-text');
-  const copyBtn = $('copy-md-btn'), newBtn = $('new-btn');
+  const copyBtn = $('copy-md-btn'), newBtn = $('new-btn'), aboutBtn = $('about-btn');
+  const apiKeyField = $('api-key-field'), apiKeyInput = $('api-key');
 
   let report = null, sections = [], docTitle = 'source.md';
   let elapsedTimer = null, runStart = 0;
@@ -42,24 +43,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = PRESETS[competitorSelect.value]; if (!p) return;
     docUrlInput.value = demoToggle.checked ? p.mockUrl : p.liveUrl;
   }
-  demoToggle.addEventListener('change', () => { setMode(demoToggle.checked); syncUrl(); });
+  function syncKeyField() { apiKeyField.hidden = demoToggle.checked; }
+  demoToggle.addEventListener('change', () => { setMode(demoToggle.checked); syncUrl(); syncKeyField(); });
+  apiKeyInput.addEventListener('input', () => apiKeyInput.classList.remove('nudge'));
   competitorSelect.addEventListener('change', () => {
     const p = PRESETS[competitorSelect.value]; if (p) { claimsInput.value = p.claims; syncUrl(); }
   });
   setMode(demoToggle.checked);
+  syncKeyField();
 
   // =========================================================================
   // Submit → run
   // =========================================================================
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const demo = demoToggle.checked;
+    const key = apiKeyInput.value.trim();
+    // Live mode needs a key — prompt for it inline rather than failing in the run view.
+    if (!demo && !key) {
+      apiKeyField.hidden = false;
+      apiKeyInput.classList.add('nudge');
+      apiKeyInput.focus();
+      return;
+    }
     const payload = {
       competitor_name: competitorSelect.value,
       doc_url: docUrlInput.value,
       marketing_claims: claimsInput.value,
       own_positioning: $('own-positioning').value,
-      demo_mode: demoToggle.checked,
+      demo_mode: demo,
     };
+    if (!demo && key) payload.api_key = key;
 
     runBtn.disabled = true; runBtn.classList.add('loading');
     copyBtn.hidden = true; newBtn.hidden = true;
@@ -95,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const ev = JSON.parse(e.data);
       switch (ev.type) {
         case 'mode':   setMode(ev.demo); break;
+        case 'pipeline': buildPipeline(ev.agents); break;
         case 'agent':  ev.phase === 'start' ? agentStart(ev.agent) : agentDone(ev.agent, ev.detail, ev.elapsed_ms); break;
         case 'tool':   addTool(ev); break;
         case 'doc':    streamDoc(ev.raw_doc); break;
@@ -103,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
           report = ev.data; renderResults(report);
           setTimeout(() => {
             switchView('view-results');
-            copyBtn.hidden = false; newBtn.hidden = false;
+            copyBtn.hidden = false; newBtn.hidden = false; aboutBtn.hidden = false;
             runBtn.disabled = false; runBtn.classList.remove('loading');
           }, 650);
           break;
@@ -120,12 +135,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const row = (agent) => document.querySelector(`.trow[data-agent="${agent}"]`);
   function resetTimeline() {
     $('run-error').hidden = true;
-    document.querySelectorAll('.trow').forEach(r => {
-      r.classList.remove('active', 'done', 'failed');
-      r.querySelector('.tstatus').textContent = 'Pending';
-      r.querySelector('.tdetail').textContent = '';
-      r.querySelector('.tools').innerHTML = '';
-    });
+    $('timeline').innerHTML = '';   // rows are (re)built from the 'pipeline' manifest
+  }
+
+  // Build the four specialized agent rows from the backend manifest (config.py),
+  // so each row's specialty, capability, reasoning level, model, and accent are
+  // the agent's real config — not hardcoded in the page.
+  function buildPipeline(agents) {
+    $('timeline').innerHTML = (agents || []).map(a => `
+      <div class="trow${a.star ? ' star' : ''}" data-agent="${escapeHtml(a.agent)}" data-accent="${escapeHtml(a.accent)}">
+        <div class="tdot"></div>
+        <div class="tmain">
+          <div class="thead">
+            <span class="tname">${escapeHtml(a.label)}</span>
+            ${a.star ? '<span class="star-tag">★ core</span>' : ''}
+            <span class="spec-chip">${escapeHtml(a.capability)}</span>
+            <span class="think-chip think-${escapeHtml(a.thinking)}">${escapeHtml(a.thinking)} reasoning</span>
+            <span class="model-pill">${escapeHtml(a.model)}</span>
+            <span class="tstatus">Pending</span>
+          </div>
+          <div class="tspecialty">${escapeHtml(a.specialty)}</div>
+          <div class="tdetail"></div>
+          <div class="tools"></div>
+        </div>
+      </div>`).join('');
   }
   function agentStart(agent) {
     const r = row(agent); if (!r) return;
@@ -361,11 +394,18 @@ why_quota();
   // =========================================================================
   // App-bar actions
   // =========================================================================
-  newBtn.addEventListener('click', () => { switchView('view-config'); copyBtn.hidden = true; newBtn.hidden = true; });
+  function goConfig() { switchView('view-config'); copyBtn.hidden = true; newBtn.hidden = true; aboutBtn.hidden = true; }
+  newBtn.addEventListener('click', goConfig);
+
+  // "What just happened" context screen
+  aboutBtn.addEventListener('click', () => switchView('view-about'));
+  $('about-back').addEventListener('click', () => switchView('view-results'));
+  $('about-back-2').addEventListener('click', () => switchView('view-results'));
+  $('about-new').addEventListener('click', goConfig);
 
   // Failure-banner actions
   $('re-back').addEventListener('click', () => switchView('view-config'));
-  $('re-demo').addEventListener('click', () => { demoToggle.checked = true; setMode(true); $('run-error').hidden = true; form.requestSubmit(); });
+  $('re-demo').addEventListener('click', () => { demoToggle.checked = true; setMode(true); syncKeyField(); $('run-error').hidden = true; form.requestSubmit(); });
 
   copyBtn.addEventListener('click', async () => {
     if (!report) return;

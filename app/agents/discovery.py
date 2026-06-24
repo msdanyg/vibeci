@@ -29,7 +29,7 @@ CI_DOC_MCP_SERVER = McpStdioServer(
 )
 
 
-async def run_discovery_agent(competitor_name: str, doc_url: str = None) -> str:
+async def run_discovery_agent(competitor_name: str, doc_url: str = None, api_key: str = None) -> str:
     """Orchestrate the Discovery Agent using MCP tools for document ingestion.
 
     The agent is configured with the ci-doc-tools MCP server. At runtime the
@@ -45,7 +45,7 @@ async def run_discovery_agent(competitor_name: str, doc_url: str = None) -> str:
         A structured markdown summary of the competitor's raw technical specs.
     """
     # get_agent_config returns a LocalAgentConfig; we extend it with the MCP server
-    config = get_agent_config("discovery", mcp_servers=[CI_DOC_MCP_SERVER])
+    config = get_agent_config("discovery", mcp_servers=[CI_DOC_MCP_SERVER], api_key=api_key)
 
     async with Agent(config) as agent:
         prompt = (

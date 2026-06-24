@@ -21,6 +21,7 @@ from app.agents.discovery import run_discovery_agent
 from app.agents.analysis import run_analysis_agent
 from app.agents.synthesis import run_synthesis_agent, CompetitorReport
 from app.agents.checking import run_checking_agent
+from app.agents.config import agent_manifest
 
 app = FastAPI(title="Competitive Intelligence Agent Dashboard")
 
@@ -279,6 +280,7 @@ class AnalyzeRequest(BaseModel):
     marketing_claims: str
     own_positioning: str
     demo_mode: bool = False
+    api_key: Optional[str] = None  # bring-your-own-key for live mode; never stored/logged
 
 
 def _doc_stats(raw_doc: str):
@@ -301,9 +303,11 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
     """
     q = queues[job_id]
 
-    # Demo mode is clearly labelled as such in the UI; a small pace gives the
-    # timeline a readable cadence. Live mode streams at true speed.
-    PACE = 0.45 if request.demo_mode else 0.0
+    # Demo mode is clearly labelled as such in the UI; a readable pace lets the
+    # pipeline be followed step by step, and the ★ analysis stage lingers a bit
+    # longer (it's the star). Live mode streams at true speed.
+    PACE = 0.8 if request.demo_mode else 0.0
+    STAR_PACE = 1.4 if request.demo_mode else 0.0
 
     async def emit(event: dict, pace: float = 0.0):
         jobs[job_id]["events"].append(event)
@@ -311,9 +315,16 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         if pace:
             await asyncio.sleep(pace)
 
+    def el(start):
+        # Real elapsed only in live mode; in demo the cadence is paced, not compute.
+        return None if request.demo_mode else int((time.perf_counter() - start) * 1000)
+
     try:
         await emit({"type": "mode", "demo": request.demo_mode,
                     "competitor": request.competitor_name}, PACE)
+        # Manifest of the four specialized agents (label, specialty, reasoning
+        # level, accent) so the run-timeline can present each as distinct.
+        await emit({"type": "pipeline", "agents": agent_manifest()}, PACE)
 
         # Resolve the pre-canned report up front in demo mode so each stage can
         # report honest, data-derived stats instead of scripted prose.
@@ -347,13 +358,13 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         if request.demo_mode:
             doc_summary = raw_doc
         else:
-            doc_summary = await run_discovery_agent(request.competitor_name, request.doc_url)
+            doc_summary = await run_discovery_agent(request.competitor_name, request.doc_url, api_key=request.api_key)
         await emit({"type": "agent", "agent": "discovery", "phase": "done",
                     "detail": f"Ingested {lines}-line spec · {sections} sections",
-                    "elapsed_ms": int((time.perf_counter() - t0) * 1000)}, PACE)
+                    "elapsed_ms": el(t0)}, PACE)
 
         # ── Technical Analysis (the star) ────────────────────────────────────
-        await emit({"type": "agent", "agent": "analysis", "phase": "start"}, PACE)
+        await emit({"type": "agent", "agent": "analysis", "phase": "start"}, STAR_PACE)
         t0 = time.perf_counter()
         if not request.demo_mode:
             pre_screen_json = compare_claims_to_docs(request.marketing_claims, raw_doc)
@@ -366,32 +377,32 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
         await emit({"type": "tool", "agent": "analysis", "name": "compare_claims_to_docs",
                     "transport": "MCP · stdio",
                     "args": {"marketing_claims": (claims_preview[:90] + "…") if len(claims_preview) > 90 else claims_preview},
-                    "result": f"{n_pre} keyword contradiction(s) flagged"}, PACE)
+                    "result": f"{n_pre} keyword contradiction(s) flagged"}, STAR_PACE)
         if not request.demo_mode:
             analysis_details = await run_analysis_agent(
                 request.competitor_name, doc_summary,
-                request.marketing_claims, request.own_positioning)
+                request.marketing_claims, request.own_positioning, api_key=request.api_key)
         analysis_detail = (f"{len(report['gaps'])} claim-vs-reality gaps identified"
                            if request.demo_mode else "Claims contrasted against documented reality")
         await emit({"type": "agent", "agent": "analysis", "phase": "done",
                     "detail": analysis_detail,
-                    "elapsed_ms": int((time.perf_counter() - t0) * 1000)}, PACE)
+                    "elapsed_ms": el(t0)}, STAR_PACE)
 
         # ── Synthesis ────────────────────────────────────────────────────────
         await emit({"type": "agent", "agent": "synthesis", "phase": "start"}, PACE)
         t0 = time.perf_counter()
         synthesis_report = None
         if not request.demo_mode:
-            synthesis_report = await run_synthesis_agent(request.competitor_name, analysis_details)
+            synthesis_report = await run_synthesis_agent(request.competitor_name, analysis_details, api_key=request.api_key)
         await emit({"type": "agent", "agent": "synthesis", "phase": "done",
                     "detail": "Battle card + gap matrix · schema-valid (CompetitorReport)",
-                    "elapsed_ms": int((time.perf_counter() - t0) * 1000)}, PACE)
+                    "elapsed_ms": el(t0)}, PACE)
 
         # ── Fact-Checking / QC ───────────────────────────────────────────────
         await emit({"type": "agent", "agent": "checking", "phase": "start"}, PACE)
         t0 = time.perf_counter()
         if not request.demo_mode:
-            final_report = await run_checking_agent(request.competitor_name, doc_summary, synthesis_report)
+            final_report = await run_checking_agent(request.competitor_name, doc_summary, synthesis_report, api_key=request.api_key)
             removed = max(0, len(synthesis_report.gaps) - len(final_report.gaps)) if synthesis_report else 0
             report = final_report.model_dump()
             report["raw_doc"] = raw_doc
@@ -401,28 +412,32 @@ async def execute_workflow(job_id: str, request: AnalyzeRequest):
             check_detail = f"{len(report['gaps'])} gaps grounded to source documentation"
         await emit({"type": "agent", "agent": "checking", "phase": "done",
                     "detail": check_detail,
-                    "elapsed_ms": int((time.perf_counter() - t0) * 1000)}, PACE)
+                    "elapsed_ms": el(t0)}, PACE)
 
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["result"] = report
         await emit({"type": "completed", "data": report})
 
     except Exception as e:
+        # Never let a bring-your-own-key leak into an error surface.
+        msg = str(e)
+        if request.api_key:
+            msg = msg.replace(request.api_key, "***")
         jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e)
-        await emit({"type": "failed", "data": str(e)})
+        jobs[job_id]["error"] = msg
+        await emit({"type": "failed", "data": msg})
 
 
 @app.post("/api/analyze")
 async def analyze_competitor(request: AnalyzeRequest, background_tasks: BackgroundTasks):
-    # API key only required for live mode — demo mode runs entirely offline
-    if not request.demo_mode and not os.getenv("GEMINI_API_KEY"):
+    # Live mode needs a key: either one configured on the server, or the
+    # caller's bring-your-own-key. Demo mode runs entirely offline.
+    if not request.demo_mode and not (os.getenv("GEMINI_API_KEY") or request.api_key):
         raise HTTPException(
             status_code=400,
             detail=(
-                "GEMINI_API_KEY is not configured. "
-                "Enable Demo Mode to run without a key, or add your key to the "
-                ".env file. See the README for setup instructions."
+                "Live mode needs a Gemini API key. Add your own key below to run "
+                "the real four-agent pipeline, or switch to Demo mode (no key needed)."
             ),
         )
 

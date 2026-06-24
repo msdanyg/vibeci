@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -23,6 +23,7 @@
       <span id="mode-chip" class="mode-chip mode-demo">
         <span class="dot"></span><span id="mode-text">Demo data · public docs</span>
       </span>
+      <button id="about-btn" class="btn" hidden>What just happened?</button>
       <button id="copy-md-btn" class="btn" hidden>Copy as Markdown</button>
       <button id="new-btn" class="btn btn-primary" hidden>New analysis</button>
     </div>
@@ -74,6 +75,12 @@
             </div>
           </fieldset>
 
+          <div class="field api-key-field" id="api-key-field" hidden>
+            <label for="api-key">Gemini API key <span class="faint">— for Live mode</span></label>
+            <input type="password" id="api-key" placeholder="AIza… — used only for this run, never stored" autocomplete="off" spellcheck="false">
+            <p class="field-hint">Live mode runs the real four-agent pipeline on your key. It's sent only for this analysis — never stored or logged. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></p>
+          </div>
+
           <div class="config-actions">
             <label class="toggle">
               <input type="checkbox" id="demo-mode" checked>
@@ -117,40 +124,8 @@
           <div>
             <div class="section-label"><h2>Agent pipeline</h2><span class="method-tag">⚙ under the hood</span><span class="rule"></span></div>
             <p class="section-note">Four AI agents run in sequence. Each row shows the real MCP tool it called and what came back — this is how the findings are produced.</p>
-            <div id="timeline" class="timeline" aria-live="polite" aria-label="Agent pipeline progress">
-              <div class="trow" data-agent="discovery">
-                <div class="tdot"></div>
-                <div class="tmain">
-                  <div class="thead"><span class="tname">Discovery</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
-                  <div class="tdetail"></div>
-                  <div class="tools"></div>
-                </div>
-              </div>
-              <div class="trow star" data-agent="analysis">
-                <div class="tdot"></div>
-                <div class="tmain">
-                  <div class="thead"><span class="tname">Technical Analysis</span><span class="star-tag">★ core</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
-                  <div class="tdetail"></div>
-                  <div class="tools"></div>
-                </div>
-              </div>
-              <div class="trow" data-agent="synthesis">
-                <div class="tdot"></div>
-                <div class="tmain">
-                  <div class="thead"><span class="tname">Synthesis</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
-                  <div class="tdetail"></div>
-                  <div class="tools"></div>
-                </div>
-              </div>
-              <div class="trow" data-agent="checking">
-                <div class="tdot"></div>
-                <div class="tmain">
-                  <div class="thead"><span class="tname">Fact-Checking</span><span class="model-pill">gemini-2.0-flash</span><span class="tstatus">Pending</span></div>
-                  <div class="tdetail"></div>
-                  <div class="tools"></div>
-                </div>
-              </div>
-            </div>
+            <!-- rows are built from the SSE 'pipeline' manifest (config.py) -->
+            <div id="timeline" class="timeline" aria-live="polite" aria-label="Agent pipeline progress"></div>
           </div>
 
           <div class="evidence">
@@ -251,6 +226,65 @@
         </details>
       </div>
     </section>
+
+    <!-- ===================== Context · What just happened ===================== -->
+    <section id="view-about" class="view">
+      <div class="page about">
+        <div class="about-head">
+          <div>
+            <span class="eyebrow">How this works</span>
+            <h1>What just happened</h1>
+            <p class="head-sub">VibeCI ran a four-agent pipeline that read a competitor's own technical docs and proved where their marketing overstates reality — every finding grounded to the source line.</p>
+          </div>
+          <button class="btn" id="about-back">← Back to results</button>
+        </div>
+
+        <div class="about-grid">
+          <article class="about-card">
+            <span class="find-tag">The workflow</span>
+            <h3>What a team does by hand — compressed into one run</h3>
+            <p>Product marketers and sales engineers do this manually: read a competitor's API docs and knowledge base, line them up against the marketing site, find where the claims break, and hand sales a battle card. It's slow, it needs a technical reader, and it's stale the moment the competitor ships an update.</p>
+            <p>VibeCI compresses that into a single pass — ingest the docs, reason about claim-vs-reality, ground every finding to a source line, and emit an account-ready battle card.</p>
+          </article>
+
+          <article class="about-card">
+            <span class="method-tag">⚙ the pipeline</span>
+            <h3>Four specialized agents, each tuned to its job</h3>
+            <ul class="about-list">
+              <li><b>Discovery</b> — ingests the competitor's docs through an MCP tool server. <i>Low reasoning, high throughput.</i></li>
+              <li><b>Technical Analysis ★</b> — the star: high-reasoning claim-vs-reality contrast. This is the defensible part of the product.</li>
+              <li><b>Synthesis</b> — structures the findings into a schema-validated battle card.</li>
+              <li><b>Fact-Checking</b> — high-reasoning QC that grounds every claim back to the source and drops anything unsupported.</li>
+            </ul>
+          </article>
+
+          <article class="about-card about-org">
+            <span class="find-tag">In an org</span>
+            <h3>Built from real work at ActivTrak</h3>
+            <p>This demo illustrates a competitive-intelligence workflow I automated at <b>ActivTrak</b> — rebuilt here on public competitor documentation so it can be shown outside the company.</p>
+            <p>In practice the output feeds sales enablement: battle cards land in the CRM, reps get defensible talking points and discovery questions instead of vague positioning, and PMM stops spending days assembling decks that go stale. The payoff is faster rep ramp, sharper competitive deals, and higher win rates.</p>
+          </article>
+
+          <article class="about-card">
+            <span class="method-tag">⚙ under the hood</span>
+            <h3>The technical build</h3>
+            <ul class="about-list tech">
+              <li><b>Multi-agent orchestration</b> on the <code>google.antigravity</code> SDK (Gemini) — four agents with role-specific reasoning levels.</li>
+              <li><b>MCP tool server</b> (stdio) exposing the doc-fetch and claims pre-screen tools.</li>
+              <li><b>Real source grounding</b> — every claim is matched to a line in the ingested doc, client-side, no hardcoded citations.</li>
+              <li><b>Structured output</b> validated against a Pydantic <code>CompetitorReport</code> schema.</li>
+              <li><b>FastAPI + Server-Sent Events</b> stream the live run timeline you just watched.</li>
+              <li><b>Deployed on Google Cloud Run.</b> Demo mode is keyless and deterministic; Live mode runs the real pipeline on a Gemini key.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="about-foot">
+          <button class="btn btn-primary" id="about-back-2">← Back to the battle card</button>
+          <button class="btn" id="about-new">Run another competitor</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="appfoot">
@@ -259,6 +293,6 @@
     <span>4 agents over an MCP tool server</span>
   </footer>
 
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
