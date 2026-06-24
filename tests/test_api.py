@@ -66,6 +66,16 @@ def test_live_mode_accepts_bring_your_own_key(monkeypatch):
     assert "job_id" in r.json()
 
 
+def test_landscape_returns_field_matrix():
+    r = client.post("/api/landscape", json={"demo_mode": True, "icp": "IT leaders at regulated firms"})
+    assert r.status_code == 200
+    L = r.json()
+    assert L["competitors"] and L["dimensions"]
+    assert all(c in L["matrix"] for c in L["competitors"])           # every competitor scored
+    assert all(d["name"] in L["matrix"][L["competitors"][0]] for d in L["dimensions"])
+    assert "IT leaders" in L["field_brief"]["icp"]                    # field brief echoes the caller's ICP
+
+
 def test_demo_mode_starts_a_job_without_key(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     r = client.post("/api/analyze", json={

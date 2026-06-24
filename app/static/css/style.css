@@ -387,6 +387,39 @@ pre.json { background:#0F1115; color:#E3E6EB; font-family:var(--font-mono); font
 
 @media (max-width:760px) { .brief-grid { grid-template-columns:1fr; } }
 
+/* ---------- Config: two actions ---------- */
+.action-btns { display:flex; align-items:center; gap:10px; }
+
+/* ---------- Competitive landscape (heatmap) ---------- */
+.land-brief { margin-bottom:28px; }
+.land-brief .brief-h { margin-top:14px; }
+.land-matrix-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-xs); }
+.land-matrix { width:100%; border-collapse:collapse; font-size:13.5px; background:var(--bg-surface); }
+.land-matrix th, .land-matrix td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--border); }
+.land-matrix thead th { background:var(--bg-subtle); font-size:12px; font-weight:600; color:var(--text-muted); border-bottom:1px solid var(--border-strong); }
+.land-matrix .dim-h { width:30%; }
+.land-matrix .comp-h { cursor:pointer; user-select:none; white-space:nowrap; transition:color .12s; }
+.land-matrix .comp-h:hover { color:var(--brand-700); }
+.land-matrix .comp-h .drill { font-family:var(--font-mono); font-size:10px; color:var(--brand-600); margin-left:4px; opacity:0; transition:opacity .12s; }
+.land-matrix .comp-h:hover .drill { opacity:1; }
+.land-matrix .us-h { color:var(--positive); text-align:center; }
+.land-matrix tbody tr:last-child td { border-bottom:none; }
+.land-matrix .dim-name { display:block; font-weight:600; color:var(--text-strong); }
+.land-matrix .dim-pillar { display:block; font-size:11px; color:var(--text-faint); margin-top:2px; }
+.land-matrix .cell { font-weight:600; font-size:12px; }
+.land-matrix .cell-high { color:var(--gap-high); background:var(--gap-high-bg); }
+.land-matrix .cell-moderate { color:var(--gap-mod); background:var(--gap-mod-bg); }
+.land-matrix .cell-none { color:var(--text-faint); }
+.land-matrix .cell .sev-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+.land-matrix .cell-high .sev-dot { background:var(--gap-high); }
+.land-matrix .cell-moderate .sev-dot { background:var(--gap-mod); }
+.land-matrix .cell-none .sev-dot { background:var(--border-strong); }
+.land-matrix .cell.us { text-align:center; background:var(--positive-bg); }
+.land-matrix .us-check { color:var(--positive); font-weight:700; font-size:15px; }
+.land-wins { margin-top:28px; }
+
+@media (max-width:760px) { .action-btns { flex-direction:column; align-items:stretch; width:100%; } }
+
 /* ---------- Accessibility: visible focus ---------- */
 a:focus-visible, button:focus-visible, [role="button"]:focus-visible,
 summary:focus-visible, select:focus-visible {

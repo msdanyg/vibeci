@@ -431,6 +431,51 @@ why_quota();
   $('about-back-2').addEventListener('click', () => switchView('view-results'));
   $('about-new').addEventListener('click', goConfig);
 
+  // Competitive landscape — the whole field at once
+  $('landscape-btn').addEventListener('click', async () => {
+    const res = await fetch('/api/landscape', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        demo_mode: demoToggle.checked,
+        own_positioning: $('own-positioning').value,
+        roadmap: $('roadmap').value,
+        icp: $('icp').value,
+      }),
+    });
+    renderLandscape(await res.json());
+    copyBtn.hidden = true; newBtn.hidden = true; aboutBtn.hidden = true;
+    switchView('view-landscape');
+  });
+  $('land-new').addEventListener('click', goConfig);
+
+  function renderLandscape(L) {
+    $('land-directive').textContent = L.field_brief.directive || '';
+    $('land-pillars').innerHTML = (L.field_brief.pillars || []).map(p => `<span class="pillar-chip">${escapeHtml(p)}</span>`).join('');
+    let html = '<thead><tr><th class="dim-h">Dimension</th>' +
+      L.competitors.map(c => `<th class="comp-h" data-comp="${escapeHtml(c)}" title="Open ${escapeHtml(c)}'s battle card">${escapeHtml(c)}<span class="drill">open ↗</span></th>`).join('') +
+      '<th class="us-h">ActivTrak</th></tr></thead><tbody>';
+    L.dimensions.forEach(d => {
+      html += `<tr><td><span class="dim-name">${escapeHtml(d.name)}</span><span class="dim-pillar">${escapeHtml(d.pillar)}</span></td>`;
+      L.competitors.forEach(c => {
+        const [sev, note] = (L.matrix[c] && L.matrix[c][d.name]) || ['none', ''];
+        html += `<td class="cell cell-${escapeHtml(sev)}"${note ? ` title="${escapeHtml(note)}"` : ''}><span class="sev-dot"></span>${sev === 'none' ? '—' : escapeHtml(sev)}</td>`;
+      });
+      html += '<td class="cell us"><span class="us-check">✓</span></td></tr>';
+    });
+    html += '</tbody>';
+    const m = $('land-matrix');
+    m.innerHTML = html;
+    m.querySelectorAll('.comp-h').forEach(th => th.addEventListener('click', () => drillCompetitor(th.dataset.comp)));
+    $('land-wins').innerHTML = (L.where_we_win || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
+  }
+
+  function drillCompetitor(name) {
+    competitorSelect.value = name;
+    const p = PRESETS[name];
+    if (p) { claimsInput.value = p.claims; syncUrl(); }
+    form.requestSubmit();
+  }
+
   // Failure-banner actions
   $('re-back').addEventListener('click', () => switchView('view-config'));
   $('re-demo').addEventListener('click', () => { demoToggle.checked = true; setMode(true); syncKeyField(); $('run-error').hidden = true; form.requestSubmit(); });

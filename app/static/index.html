@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=14">
+  <link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -87,7 +87,7 @@
           <div class="field api-key-field" id="api-key-field" hidden>
             <label for="api-key">Gemini API key <span class="faint">— for Live mode</span></label>
             <input type="password" id="api-key" placeholder="AIza… — used only for this run, never stored" autocomplete="off" spellcheck="false">
-            <p class="field-hint">Live mode runs the real four-agent pipeline on your key. It's sent only for this analysis — never stored or logged. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></p>
+            <p class="field-hint">Live mode runs the real five-agent pipeline on your key. It's sent only for this analysis — never stored or logged. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></p>
           </div>
 
           <div class="config-actions">
@@ -96,10 +96,13 @@
               <span class="track"></span>
               <span class="toggle-label">Demo mode<span class="toggle-hint">pre-ingested public docs · no API key</span></span>
             </label>
-            <button type="submit" id="run-btn" class="btn btn-primary btn-lg">
-              <span class="btn-text">Run analysis</span>
-              <span class="spinner"></span>
-            </button>
+            <div class="action-btns">
+              <button type="button" id="landscape-btn" class="btn">Compare the field →</button>
+              <button type="submit" id="run-btn" class="btn btn-primary btn-lg">
+                <span class="btn-text">Run analysis</span>
+                <span class="spinner"></span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -256,6 +259,37 @@
       </div>
     </section>
 
+    <!-- ===================== Competitive landscape ===================== -->
+    <section id="view-landscape" class="view">
+      <div class="page">
+        <div class="result-head">
+          <div>
+            <span class="eyebrow">Competitive landscape · demo</span>
+            <h1>The whole field at a glance</h1>
+            <p class="sub">Every rival scored on the capability dimensions <strong>your</strong> strategy cares about — directed by the same research brief.</p>
+          </div>
+          <button class="btn btn-primary" id="land-new">New analysis</button>
+        </div>
+
+        <div class="brief-card land-brief">
+          <p class="brief-directive" id="land-directive"></p>
+          <div class="brief-h">Anchored in your pillars</div>
+          <div class="pillar-chips" id="land-pillars"></div>
+        </div>
+
+        <div class="section-label"><h2>Where ActivTrak wins</h2><span class="find-tag">the findings</span><span class="rule"></span></div>
+        <p class="section-note">Each cell is the severity of that competitor's documented weakness on that dimension — i.e., your opening. <strong>Click a competitor</strong> to open their full battle card.</p>
+        <div class="land-matrix-wrap">
+          <table class="land-matrix" id="land-matrix"></table>
+        </div>
+
+        <div class="takeaways land-wins">
+          <h3>Your openings across the field</h3>
+          <ul id="land-wins"></ul>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== Context · What just happened ===================== -->
     <section id="view-about" class="view">
       <div class="page about">
@@ -333,6 +367,6 @@
     <span>4 agents over an MCP tool server</span>
   </footer>
 
-  <script src="js/app.js?v=14"></script>
+  <script src="js/app.js?v=15"></script>
 </body>
 </html>

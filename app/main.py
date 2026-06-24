@@ -320,6 +320,58 @@ DEMO_LENSES = {
     "timedoctor": ["Data resolution", "Privacy & surveillance", "Real-time integrity"],
 }
 
+# ---------------------------------------------------------------------------
+# Multi-competitor "competitive landscape" — the whole field at once, scored on
+# a shared set of capability dimensions derived from ActivTrak's strategy. Each
+# cell is the severity of THAT competitor's documented weakness on THAT
+# dimension = where ActivTrak wins. Demo-canonical (deterministic, no key).
+# ---------------------------------------------------------------------------
+DEMO_LANDSCAPE = {
+    "field_brief": {
+        "directive": "Map the employee-monitoring field against ActivTrak's privacy-first, outcome-based strategy — and show where each rival's surveillance-heavy approach opens a lane for us.",
+        "icp": "IT & People-Ops leaders at privacy-conscious, regulated mid-market companies",
+        "pillars": ["Trust", "Lightweight", "Insight, not surveillance", "Outcome-based measurement"],
+    },
+    "competitors": ["Teramind", "Hubstaff", "Time Doctor"],
+    "dimensions": [
+        {"name": "Real-time accuracy", "pillar": "Insight, not surveillance"},
+        {"name": "Privacy & trust", "pillar": "Trust"},
+        {"name": "Lightweight agent", "pillar": "Lightweight"},
+        {"name": "Measurement validity", "pillar": "Outcome-based measurement"},
+        {"name": "Worker experience", "pillar": "Respect deep work"},
+    ],
+    # matrix[competitor][dimension] = [severity, evidence-note]
+    "matrix": {
+        "Teramind": {
+            "Real-time accuracy": ["high", "Screenshots batched into 5 MB chunks → 2–5 min lag"],
+            "Privacy & trust": ["high", "Keystroke logging + always-on screen capture"],
+            "Lightweight agent": ["high", "350 kbps/user — saturates office networks"],
+            "Measurement validity": ["none", ""],
+            "Worker experience": ["none", ""],
+        },
+        "Hubstaff": {
+            "Real-time accuracy": ["none", ""],
+            "Privacy & trust": ["moderate", "Screenshots + idle popups"],
+            "Lightweight agent": ["none", ""],
+            "Measurement validity": ["high", "Scores raw mouse/keyboard activity, not output"],
+            "Worker experience": ["moderate", "Interruptive 'are you working?' idle prompts"],
+        },
+        "Time Doctor": {
+            "Real-time accuracy": ["high", "Up to 10-min screenshot upload lag"],
+            "Privacy & trust": ["high", "Screenshots + idle micromanagement"],
+            "Lightweight agent": ["moderate", "15-second coarse sampling"],
+            "Measurement validity": ["moderate", "15s sampling misses rapid real work"],
+            "Worker experience": ["moderate", "Distraction popups interrupt focus"],
+        },
+    },
+    "where_we_win": [
+        "Real-time accuracy: Teramind and Time Doctor both lag minutes behind — ActivTrak's insight is current, not buffered.",
+        "Privacy & trust: every rival logs keystrokes or captures screens; ActivTrak's trust-first stance is a clean win for regulated buyers.",
+        "Lightweight: Teramind alone burns 350 kbps/user — ActivTrak's agent won't clog IT's network.",
+        "Measurement validity: rivals score mouse-wiggle activity; ActivTrak measures real focus and outcomes.",
+    ],
+}
+
 
 class AnalyzeRequest(BaseModel):
     competitor_name: str
@@ -330,6 +382,13 @@ class AnalyzeRequest(BaseModel):
     icp: Optional[str] = None       # solution map / ideal customer profile (would sync from CRM)
     demo_mode: bool = False
     api_key: Optional[str] = None   # bring-your-own-key for live mode; never stored/logged
+
+
+class LandscapeRequest(BaseModel):
+    own_positioning: Optional[str] = None
+    roadmap: Optional[str] = None
+    icp: Optional[str] = None
+    demo_mode: bool = True
 
 
 def _doc_stats(raw_doc: str):
@@ -514,7 +573,7 @@ async def analyze_competitor(request: AnalyzeRequest, background_tasks: Backgrou
             status_code=400,
             detail=(
                 "Live mode needs a Gemini API key. Add your own key below to run "
-                "the real four-agent pipeline, or switch to Demo mode (no key needed)."
+                "the real five-agent pipeline, or switch to Demo mode (no key needed)."
             ),
         )
 
@@ -524,6 +583,17 @@ async def analyze_competitor(request: AnalyzeRequest, background_tasks: Backgrou
 
     background_tasks.add_task(execute_workflow, job_id, request)
     return {"job_id": job_id}
+
+
+@app.post("/api/landscape")
+async def competitive_landscape(request: LandscapeRequest):
+    """The whole competitive field at once — a comparative landscape scored on
+    capability dimensions derived from your strategy. Demo-canonical (the
+    pre-built matrix), with the field brief echoing the caller's pillars/ICP."""
+    land = json.loads(json.dumps(DEMO_LANDSCAPE))  # deep copy
+    if request.icp:
+        land["field_brief"]["icp"] = request.icp.strip().split(".")[0][:140]
+    return land
 
 
 @app.get("/api/stream/{job_id}")
