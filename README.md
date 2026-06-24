@@ -8,6 +8,8 @@
 [![Cloud Run](https://img.shields.io/badge/Deploy-Cloud%20Run-blue.svg)](https://cloud.google.com/run)
 [![License: CC-BY 4.0](https://img.shields.io/badge/License-CC--BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
+**🔗 Live demo:** **[vibeci-107532323288.us-central1.run.app](https://vibeci-107532323288.us-central1.run.app)** — runs in Demo mode, no key needed. Pick a competitor → Run analysis → click a citation to jump to the source line.
+
 ---
 
 ## 🎯 The Problem
