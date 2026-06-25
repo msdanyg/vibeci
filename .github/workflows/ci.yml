@@ -1,0 +1,33 @@
+name: CI
+
+# Runs the test suite — including the grounding-confidence gate
+# (tests/test_grounding_eval.py) — on every push and PR. The grounding eval is
+# also run standalone so its per-gap report shows up in the Actions log.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests (incl. grounding gate)
+        run: pytest -q
+
+      - name: Grounding-confidence eval (report)
+        run: python -m eval.grounding_eval

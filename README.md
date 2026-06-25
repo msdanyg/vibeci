@@ -2,6 +2,7 @@
 
 > **AI Agents: Intensive Vibe Coding Capstone Project** | Track: *Agents for Business* | Deadline: July 6, 2026
 
+[![CI](https://github.com/msdanyg/vibeci/actions/workflows/ci.yml/badge.svg)](https://github.com/msdanyg/vibeci/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://python.org)
 [![Antigravity SDK](https://img.shields.io/badge/Google-Antigravity%20SDK-orange.svg)](https://pypi.org/project/google-antigravity/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com)
