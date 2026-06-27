@@ -4,7 +4,7 @@
 
 - **Live demo (no login, no key):** https://vibeci-107532323288.us-central1.run.app
 - **Code:** https://github.com/msdanyg/vibeci
-- **Video:** _[paste your YouTube link]_
+- **Video:** https://youtu.be/uwQ-sPUDyfY
 
 > _Writeup target ≤ 2,500 words. This draft is ~1,700. Before submitting, confirm the official "key concepts" list on the competition page and keep the three that match (see §7)._
 
@@ -93,4 +93,4 @@ Automated discovery of competitor doc sources, live CRM/knowledge-base integrati
 
 ---
 
-**Try it:** https://vibeci-107532323288.us-central1.run.app · **Code:** https://github.com/msdanyg/vibeci · **Video:** _[YouTube link]_
+**Try it:** https://vibeci-107532323288.us-central1.run.app · **Code:** https://github.com/msdanyg/vibeci · **Video:** https://youtu.be/uwQ-sPUDyfY
