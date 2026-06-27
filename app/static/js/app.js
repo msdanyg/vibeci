@@ -468,10 +468,26 @@ why_quota();
   newBtn.addEventListener('click', goConfig);
 
   // "What just happened" context screen
-  aboutBtn.addEventListener('click', () => switchView('view-about'));
-  $('about-back').addEventListener('click', () => switchView('view-results'));
-  $('about-back-2').addEventListener('click', () => switchView('view-results'));
+  // The About / "what just happened" view doubles as the project-context page
+  // (capstone framing + links). It's reachable from results ("What just happened?")
+  // and from the footer on any view — so remember where we came from and route the
+  // back buttons there, relabelling them for the no-report (footer) case.
+  let aboutReturn = 'view-results';
+  function openAbout(fromView) {
+    aboutReturn = fromView || 'view-results';
+    const fromResults = aboutReturn === 'view-results';
+    $('about-back').textContent = fromResults ? '← Back to results' : '← Back';
+    $('about-back-2').textContent = fromResults ? '← Back to the battle card' : '← Back';
+    switchView('view-about');
+  }
+  aboutBtn.addEventListener('click', () => openAbout('view-results'));
+  $('about-back').addEventListener('click', () => switchView(aboutReturn));
+  $('about-back-2').addEventListener('click', () => switchView(aboutReturn));
   $('about-new').addEventListener('click', goConfig);
+  $('foot-about').addEventListener('click', () => {
+    const cur = document.querySelector('.view.active');
+    openAbout(cur ? cur.id : 'view-config');
+  });
 
   // Competitive landscape — the whole field at once
   $('landscape-btn').addEventListener('click', async () => {

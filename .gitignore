@@ -17,3 +17,6 @@ __pycache__/
 
 # Scratch screenshots in the repo root (README assets live in assets/)
 /*.png
+
+# Submission video lives on YouTube, not in the repo
+*.mp4

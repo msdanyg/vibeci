@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
   <!-- ===================== App bar ===================== -->
@@ -315,6 +315,16 @@
           <button class="btn" id="about-back">← Back to results</button>
         </div>
 
+        <div class="capstone-banner">
+          <span class="cap-badge">Kaggle × Google · AI Agents Capstone</span>
+          <p>VibeCI was built for the <strong>“AI Agents: Intensive Vibe Coding”</strong> capstone (track: Agents for Business) — a deployable, multi-agent system, <strong>vibe-coded</strong> by directing a team of coding agents. It doubles as a portfolio piece: a sanitized, public-docs-only replication of a competitive-intelligence workflow I automated at ActivTrak.</p>
+          <div class="cap-links">
+            <a class="btn" href="https://github.com/msdanyg/vibeci" target="_blank" rel="noopener">Code on GitHub ↗</a>
+            <a class="btn" href="https://github.com/msdanyg/vibeci/blob/main/SUBMISSION.md" target="_blank" rel="noopener">Full write-up ↗</a>
+            <a class="btn" id="cap-video" href="#" target="_blank" rel="noopener" hidden>Watch the 3-min video ↗</a>
+          </div>
+        </div>
+
         <div class="about-grid">
           <article class="about-card">
             <span class="find-tag">The workflow</span>
@@ -348,7 +358,7 @@
             <ul class="about-list tech">
               <li><b>Multi-agent orchestration</b> on the <code>google.antigravity</code> SDK (Gemini) — five agents with role-specific reasoning levels.</li>
               <li><b>MCP tool server</b> (stdio) exposing the doc-fetch and claims pre-screen tools.</li>
-              <li><b>Real source grounding</b> — every claim is matched to a line in the ingested doc, client-side, no hardcoded citations.</li>
+              <li><b>Real source grounding — scored &amp; eval-gated</b> — every claim is matched to a line in the ingested doc (no hardcoded citations) and given a confidence score; an eval gates that score in CI.</li>
               <li><b>Structured output</b> validated against a Pydantic <code>CompetitorReport</code> schema.</li>
               <li><b>FastAPI + Server-Sent Events</b> stream the live run timeline you just watched.</li>
               <li><b>Deployed on Google Cloud Run.</b> Demo mode is keyless and deterministic; Live mode runs the real pipeline on a Gemini key.</li>
@@ -379,8 +389,12 @@
     <span>Deployable on Google Cloud Run · FastAPI + SSE</span>
     <span class="dotsep">·</span>
     <span>5 agents over an MCP tool server</span>
+    <span class="dotsep">·</span>
+    <a class="foot-a" href="https://github.com/msdanyg/vibeci" target="_blank" rel="noopener">GitHub</a>
+    <span class="dotsep">·</span>
+    <button type="button" class="foot-a" id="foot-about">About this project</button>
   </footer>
 
-  <script src="js/app.js?v=19"></script>
+  <script src="js/app.js?v=20"></script>
 </body>
 </html>
