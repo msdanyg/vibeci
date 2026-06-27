@@ -159,7 +159,8 @@ The response also carries `raw_doc` (the ingested source text) and `preliminary_
 | **Grounding-confidence eval** | Per-gap confidence score, surfaced in-app and **gated** by `eval/grounding_eval.py` + pytest | ✅ Built |
 | **Structured output** | Pydantic `CompetitorReport` schema, validated and viewable in-app | ✅ Built |
 | **Deployability** | `Dockerfile` + Cloud Run config (see below) | ✅ Built |
-| **Antigravity** | Agentic build process shown in video | 🎯 Target |
+| **Security features** | No secrets in code; bring-your-own-key (masked, never stored); SSRF guard on the live doc fetch | ✅ Built |
+| **Antigravity** | Built on the `google.antigravity` SDK; the agentic, vibe-coded build is shown in the [video](https://youtu.be/uwQ-sPUDyfY) | ✅ Built |
 
 ---
 

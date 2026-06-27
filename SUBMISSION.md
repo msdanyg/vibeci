@@ -6,7 +6,7 @@
 - **Code:** https://github.com/msdanyg/vibeci
 - **Video:** https://youtu.be/uwQ-sPUDyfY
 
-> _Writeup target ≤ 2,500 words. This draft is ~1,700. Before submitting, confirm the official "key concepts" list on the competition page and keep the three that match (see §7)._
+> _≤ 2,500 words (this draft ~1,700). **Track: Agents for Business.** Required attachments — a cover image (`assets/cover.png`) and a ≤5-min YouTube video — are ready. Key concepts confirmed against the competition page's Evaluation table (see §7)._
 
 ---
 
@@ -64,18 +64,19 @@ This is the part I am proudest of — and it exists because of how the project w
 
 The reframe that makes VibeCI more than a doc-diff: it starts from *your* strategy. The Strategy agent turns your business context — pulled from mocked connectors to Confluence (messaging), Productboard (roadmap), and Salesforce (solution map / ICP) — into the research brief that steers Discovery and Analysis. Every gap is then tagged with the lens it answers, and the battle card is anchored in your pillars and framed for your buyer. A **competitive-landscape** view scores the whole field on the dimensions your strategy cares about, so you see exactly where you win.
 
-## 7. Course concepts demonstrated (≥3)
+## 7. Course concepts demonstrated
 
-VibeCI demonstrably applies several course concepts — pick the three that match the official rubric:
+The capstone requires demonstrating **at least three** of the course's key concepts. VibeCI demonstrates **five** (using the official concept names, with where each is shown):
 
-- **Multi-agent system** — five specialized agents orchestrated as a pipeline, each with a role-tuned reasoning level.
-- **MCP server / tool use** — a real `FastMCP` server over stdio, with tool I/O surfaced live in the UI.
-- **Deployability** — public, keyless **Google Cloud Run** deployment, no login.
-- **Structured output** — Pydantic-validated `CompetitorReport` schema.
-- **Evals** — a grounding-confidence eval that gates quality in CI.
-- **Context engineering** — the Strategy agent compiles a Research Brief that becomes the working context steering every downstream agent.
-- **State / session management** — per-job state and an SSE event stream drive the live run timeline.
-- **Security** — no secrets in code; bring-your-own-key live mode (per-request, masked, never stored); an SSRF guard on the live doc fetch.
+| Key concept | Where | In VibeCI |
+|---|---|---|
+| **Agent / Multi-agent system** | Code | Five specialized agents — Strategy → Discovery → Technical Analysis ★ → Synthesis → Fact-Checking — on the `google.antigravity` SDK, each with a role-tuned reasoning level, orchestrated as a streaming pipeline. |
+| **MCP Server** | Code | A real `FastMCP` server over stdio (`fetch_competitor_docs`, `compare_claims_to_docs`); the Discovery agent calls it as an MCP client, with tool I/O surfaced live in the UI. |
+| **Deployability** | Video | Public, keyless **Google Cloud Run** deployment (no login), shown in the video; reproducible from the `Dockerfile`. |
+| **Security features** | Code | No secrets in code; bring-your-own-key live mode (per-request, masked, never stored); an SSRF guard restricting the live doc fetch to public hosts. |
+| **Antigravity** | Video | Built on the `google.antigravity` SDK; the agentic, vibe-coded build process is shown in the video. |
+
+Beyond the required concepts, the project adds engineering rigor that isn't on the rubric but strengthens it: Pydantic-validated **structured output**, real **source grounding**, and a **grounding-confidence eval** gated in CI.
 
 ## 8. How it was built — vibe-coded
 
