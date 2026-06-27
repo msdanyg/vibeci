@@ -48,40 +48,66 @@ The UI is built so a viewer can *trust* the output, not just read it:
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     User (Browser, SPA)                     │
-│  Config → Run timeline → Results, swapped client-side        │
-│  Inputs: your positioning · competitor · doc URL · claims    │
-└───────────────────────┬─────────────────────────────────────┘
-                        │  POST /api/analyze  →  job_id
-                        │  GET  /api/stream/{job_id}  (SSE)
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              FastAPI Backend (Cloud Run)                     │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │   Multi-agent pipeline (google.antigravity SDK)      │   │
-│  │                                                     │   │
-│  │   Discovery ──▶ Technical Analysis ★ ──▶ Synthesis  │   │
-│  │      │                                      │       │   │
-│  │      │            ┌─────────────────────────▼─────┐ │   │
-│  │      └──MCP──▶     │      Fact-Checking / QC       │ │   │
-│  │                   └───────────────────────────────┘ │   │
-│  │                                                     │   │
-│  │  ┌──────────────────────────────────────────────┐   │   │
-│  │  │        MCP Server (ci-doc-tools, stdio)       │   │   │
-│  │  │  • fetch_competitor_docs                      │   │   │
-│  │  │  • compare_claims_to_docs                     │   │   │
-│  │  └──────────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  Emits a structured SSE timeline (agent / tool / doc /      │
-│  completed events) → the browser renders it live.           │
-└─────────────────────────────────────────────────────────────┘
+### System at a glance
+
+```mermaid
+flowchart TB
+    subgraph BROWSER["Browser - vanilla-JS SPA (5 views)"]
+        UI["Config -> Run timeline -> Results -> Landscape -> About<br/>inputs: your positioning | competitor | doc URL | marketing claims"]
+    end
+
+    subgraph BACKEND["FastAPI backend - Google Cloud Run (single instance)"]
+        API["execute_workflow() - manual sequential orchestration"]
+        subgraph PIPE["5-agent pipeline - google.antigravity SDK - gemini-2.0-flash"]
+            S["1 - Strategy (high)<br/>business context -> Research Brief"]
+            D["2 - Discovery (low)<br/>ingest competitor docs"]
+            A["3 - Technical Analysis * (high)<br/>claim vs. documented reality"]
+            Y["4 - Synthesis (medium)<br/>schema-valid battle card"]
+            C["5 - Fact-Checking (high)<br/>ground every claim, drop unsupported"]
+            S --> D --> A --> Y --> C
+        end
+        MCP["MCP server - stdio - FastMCP<br/>fetch_competitor_docs | compare_claims_to_docs"]
+        GROUND["grounding.py - score each gap to a source line<br/>gated by eval/grounding_eval.py in CI"]
+        API --> PIPE
+        D <-->|MCP| MCP
+        C --> GROUND
+    end
+
+    UI -->|"POST /api/analyze -> job_id"| API
+    GROUND -->|"completed report + grounding"| API
+    API -.->|"SSE /api/stream - typed events: mode/pipeline/agent/tool/doc/brief/completed"| UI
 ```
 
 **SDK note:** the agents are built on the **`google.antigravity`** SDK (`from google.antigravity import Agent, LocalAgentConfig`), all targeting `gemini-2.0-flash`. Orchestration is explicit, sequential `await`s in `app/main.py` (not SDK-driven handoff), which is what lets the backend emit a clean, honest event timeline.
+
+### Request lifecycle
+
+1. **Submit** - `POST /api/analyze` creates a job and kicks `execute_workflow` off as a FastAPI `BackgroundTask`; it returns a `job_id` immediately.
+2. **Stream** - the browser opens `GET /api/stream/{job_id}` as an SSE `EventSource`; the backend emits a **typed event timeline** (not log strings) the UI renders live.
+3. **Orchestrate** - the five agents run as explicit sequential `await`s; Discovery calls the MCP tools; the Strategy brief steers Analysis and Synthesis.
+4. **Ground & finish** - `ground_report()` scores every gap to a source line, then a terminal `completed` event delivers the full report.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Browser (SPA)
+    participant F as FastAPI
+    participant P as Agent pipeline
+    participant M as MCP server
+    U->>F: POST /api/analyze (competitor, claims, your positioning)
+    F-->>U: { job_id } - execute_workflow runs as a BackgroundTask
+    U->>F: GET /api/stream/{job_id} (SSE / EventSource)
+    F-->>U: mode + pipeline manifest
+    P->>P: Strategy -> Research Brief
+    F-->>U: agent + brief events
+    P->>M: fetch_competitor_docs, compare_claims_to_docs
+    M-->>P: docs + contradiction snippets
+    F-->>U: tool + doc events
+    P->>P: Technical Analysis * -> Synthesis -> Fact-Checking
+    F-->>U: per-stage agent events
+    P->>P: ground_report() scores every gap to a source line
+    F-->>U: completed { report + grounding }
+```
 
 ### Agent Descriptions
 
@@ -293,7 +319,7 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key_here vibeci   # key optional;
 Per the project charter, these are architecture-designed but deliberately deferred:
 
 - **Change-tracking agent** — diff competitor docs over time; alert on updates
-- **Strategy agent** — recommend positioning moves based on gap trends
+- **Positioning-recommendation agent** — recommend *your own* positioning moves based on gap trends over time (distinct from the built Strategy/Research-Planner agent)
 - **Account differentiation agent** — map gaps to specific deal opportunities
 - **Live CRM integration** — push battle cards into Salesforce (currently illustrative)
 - **Live KB integration** — connect the user's internal knowledge base (currently mocked via pasted positioning)
