@@ -20,3 +20,7 @@ __pycache__/
 
 # Submission video lives on YouTube, not in the repo
 *.mp4
+
+# Local reference copies of the competition pages (kept on disk, not in the repo)
+/Compettition overview
+/Rules
