@@ -7,11 +7,12 @@ from google.antigravity.models import (
 # Load environment variables
 load_dotenv()
 
-# Default model. gemini-2.0-flash is a known-available id; kept consistent across
-# agents for reliability (incl. the bring-your-own-key live path). Agents are
-# specialized below via reasoning effort, tools, and structured-output schema —
-# not by swapping in unverified model ids.
-DEFAULT_MODEL = "gemini-2.0-flash"
+# Default model, kept consistent across agents (incl. the bring-your-own-key live
+# path); agents are specialized below via reasoning effort, tools, and structured
+# output — not by swapping model ids. gemini-2.0-flash was retired (shut down
+# 2026-06-01), so this targets gemini-3.5-flash, the current GA Flash model. For
+# long-term deprecation-proofing you can instead use the alias "gemini-flash-latest".
+DEFAULT_MODEL = "gemini-3.5-flash"
 
 # ---------------------------------------------------------------------------
 # Personas (system instructions)

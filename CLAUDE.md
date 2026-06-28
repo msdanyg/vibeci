@@ -37,11 +37,11 @@ docker run -p 8080:8080 -e GEMINI_API_KEY=your_key vibeci
 ./gcloud.sh run deploy vibeci --image gcr.io/PROJECT_ID/vibeci --region us-central1 ...
 ```
 
-`GEMINI_API_KEY` lives in `.env` (loaded via `python-dotenv`). It is required for **live mode only** — demo mode runs with no key and no network; the gate is in `app/main.py`. Live mode also needs a **quota-enabled** key (the Gemini free tier can be `0` for `gemini-2.0-flash` → a 429; the UI surfaces this gracefully with a demo-mode fallback).
+`GEMINI_API_KEY` lives in `.env` (loaded via `python-dotenv`). It is required for **live mode only** — demo mode runs with no key and no network; the gate is in `app/main.py`. Live mode also needs a **quota-enabled** key (the Gemini free tier can be `0` for `gemini-3.5-flash` → a 429; the UI surfaces this gracefully with a demo-mode fallback).
 
 ## Architecture
 
-**SDK note:** despite the README calling it "Google ADK," the code uses the **`google.antigravity`** SDK (`from google.antigravity import Agent, LocalAgentConfig`). All agents target `gemini-2.0-flash` (set once in `app/agents/config.py:DEFAULT_MODEL`).
+**SDK note:** despite the README calling it "Google ADK," the code uses the **`google.antigravity`** SDK (`from google.antigravity import Agent, LocalAgentConfig`). All agents target `gemini-3.5-flash` (set once in `app/agents/config.py:DEFAULT_MODEL`).
 
 ### Request lifecycle
 1. `POST /api/analyze` → creates a job (UUID), kicks off `execute_workflow` as a FastAPI `BackgroundTask`, returns `job_id`.

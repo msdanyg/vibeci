@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setMode(demo) {
     modeChip.className = 'mode-chip ' + (demo ? 'mode-demo' : 'mode-live');
-    modeText.textContent = demo ? 'Demo data · public docs' : 'Live agents · gemini-2.0-flash';
+    modeText.textContent = demo ? 'Demo data · public docs' : 'Live agents · gemini-3.5-flash';
   }
 
   // ---- config interactions ----
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const raw = String(rawMsg || '');
     let html;
     if (/\b429\b|quota|RESOURCE_EXHAUSTED/i.test(raw)) {
-      html = `The Gemini project has no remaining quota for <code>gemini-2.0-flash</code> (free-tier request limit reached). ` +
+      html = `The Gemini project has no remaining quota for <code>gemini-3.5-flash</code> (free-tier request limit reached). ` +
 why_quota();
     } else if (/api[_ ]?key|unauthor|permission|401|403|API_KEY_INVALID/i.test(raw)) {
       html = `The Gemini API key was rejected. Check <code>GEMINI_API_KEY</code> in your <code>.env</code>, then restart the server. ` +

@@ -58,7 +58,7 @@ flowchart TB
 
     subgraph BACKEND["FastAPI backend - Google Cloud Run (single instance)"]
         API["execute_workflow() - manual sequential orchestration"]
-        subgraph PIPE["5-agent pipeline - google.antigravity SDK - gemini-2.0-flash"]
+        subgraph PIPE["5-agent pipeline - google.antigravity SDK - gemini-3.5-flash"]
             S["1 - Strategy (high)<br/>business context -> Research Brief"]
             D["2 - Discovery (low)<br/>ingest competitor docs"]
             A["3 - Technical Analysis * (high)<br/>claim vs. documented reality"]
@@ -78,7 +78,7 @@ flowchart TB
     API -.->|"SSE /api/stream - typed events: mode/pipeline/agent/tool/doc/brief/completed"| UI
 ```
 
-**SDK note:** the agents are built on the **`google.antigravity`** SDK (`from google.antigravity import Agent, LocalAgentConfig`), all targeting `gemini-2.0-flash`. Orchestration is explicit, sequential `await`s in `app/main.py` (not SDK-driven handoff), which is what lets the backend emit a clean, honest event timeline.
+**SDK note:** the agents are built on the **`google.antigravity`** SDK (`from google.antigravity import Agent, LocalAgentConfig`), all targeting `gemini-3.5-flash`. Orchestration is explicit, sequential `await`s in `app/main.py` (not SDK-driven handoff), which is what lets the backend emit a clean, honest event timeline.
 
 ### Request lifecycle
 
@@ -119,7 +119,7 @@ sequenceDiagram
 | **Synthesis Agent** | Formats analysis into structured, Pydantic-validated JSON: battle cards, gap matrices, objection handlers — anchored in your pillars | `medium` |
 | **Fact-Checking / QC Agent** | Grounds every claim back to the source documentation; removes hallucinations; re-validates the schema | `high` |
 
-> All agents run `gemini-2.0-flash`, specialized by **reasoning effort** (`ThinkingLevel`), tools, and structured-output schema.
+> All agents run `gemini-3.5-flash`, specialized by **reasoning effort** (`ThinkingLevel`), tools, and structured-output schema.
 
 ### MCP Server Tools
 
@@ -171,7 +171,7 @@ The response also carries `raw_doc` (the ingested source text) and `preliminary_
 | **Demo** (default, the canonical showcase) | The full UI and SSE timeline render from pre-canned, schema-accurate reports. No network, deterministic, instant. | **None** |
 | **Live** | The real five-agent Gemini pipeline ingests docs and generates the report end-to-end. | A **quota-enabled** `GEMINI_API_KEY` |
 
-> Demo mode is the showcase: it needs no key, never rate-limits, and is reproducible for judging and portfolio review. Live mode is fully wired and authenticates/fetches/calls Gemini for real — it just needs a Google AI project with available `gemini-2.0-flash` quota (the free tier may be `0`; enable billing or use a quota-enabled key). If a live run hits a quota or key error, the UI surfaces a clean, actionable message and offers a one-click fallback to Demo mode.
+> Demo mode is the showcase: it needs no key, never rate-limits, and is reproducible for judging and portfolio review. Live mode is fully wired and authenticates/fetches/calls Gemini for real — it just needs a Google AI project with available `gemini-3.5-flash` quota (the free tier may be `0`; enable billing or use a quota-enabled key). If a live run hits a quota or key error, the UI surfaces a clean, actionable message and offers a one-click fallback to Demo mode.
 
 ---
 
